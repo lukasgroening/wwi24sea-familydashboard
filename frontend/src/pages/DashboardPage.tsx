@@ -50,13 +50,13 @@ export default function DashboardPage() {
 
       {/* Bento Grid */}
       <div className="grid grid-cols-12 gap-3.5">
-        {/* Weather — small */}
+        {/* Weather — with forecast */}
         {visibleWidgets.find((w) => w.id === 'weather') && (() => {
           const WeatherWidget = WIDGETS.find((w) => w.id === 'weather')!.component
           return (
             <div
-              className="col-span-3 rounded-2xl p-5"
-              style={{ background: '#7c9a7e', minHeight: '180px' }}
+              className="col-span-4 row-span-2 rounded-2xl p-5"
+              style={{ background: '#7c9a7e', minHeight: '380px' }}
             >
               <WeatherWidget />
             </div>
