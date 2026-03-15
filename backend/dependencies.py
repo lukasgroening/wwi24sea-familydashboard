@@ -5,7 +5,7 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 
 from database import get_session
-from models.user import User
+from models.user import Role, User
 from auth import SECRET_KEY, ALGORITHM
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
@@ -37,3 +37,12 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role not in [Role.FAMILY_ADMIN, Role.SYSTEM_ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Zugriff verweigert. Nur Administratoren dürfen Benutzer verwalten.",
+        )
+    return current_user

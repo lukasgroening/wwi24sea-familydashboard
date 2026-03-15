@@ -3,14 +3,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Session, select
 from auth import get_password_hash
-from routers import auth_router
+from routers import auth_router, users, notes
 from models.user import Role, User
 from database import engine
 
 from models import note  # noqa: F401
 from models.note import Note
-
-from routers import notes
 
 
 def create_seed_data():
@@ -72,6 +70,7 @@ app.add_middleware(
 
 app.include_router(notes.router)
 app.include_router(auth_router.router)
+app.include_router(users.router)
 
 
 @app.get("/api/health")
