@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Session, select
 from auth import get_password_hash
-from routers import auth_router, users, notes
+from routers import auth_router, users, notes, todos
 from models.user import Role, User
 from database import engine
 
@@ -71,6 +71,7 @@ app.add_middleware(
 app.include_router(notes.router)
 app.include_router(auth_router.router)
 app.include_router(users.router)
+app.include_router(todos.router)
 
 
 @app.get("/api/health")
