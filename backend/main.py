@@ -2,6 +2,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Session, select
+from auth import get_password_hash
+from routers import auth_router
+from models.user import Role, User
 from database import engine
 
 from models import note  # noqa: F401
@@ -12,6 +15,20 @@ from routers import notes
 
 def create_seed_data():
     with Session(engine) as session:
+        # 1. User Seed
+        existing_user = session.exec(select(User)).first()
+        if not existing_user:
+            print("Erstelle Dummy-Admin User...")
+            # Wir nutzen das Enum und hashen das Passwort "geheim123"
+            dummy_admin = User(
+                username="Mama_Admin",
+                hashed_password=get_password_hash("geheim123123"),
+                role=Role.FAMILY_ADMIN,
+            )
+            session.add(dummy_admin)
+            session.commit()
+            print("Dummy-Admin erfolgreich angelegt!")
+
         existing_note = session.exec(select(Note)).first()
 
         if not existing_note:
@@ -54,6 +71,7 @@ app.add_middleware(
 )
 
 app.include_router(notes.router)
+app.include_router(auth_router.router)
 
 
 @app.get("/api/health")
