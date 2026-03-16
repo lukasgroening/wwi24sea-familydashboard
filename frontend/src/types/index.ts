@@ -1,12 +1,9 @@
-export type Role = 'admin' | 'user' | 'sysadmin'
+export type Role = 'System-Administrator' | 'Familien-Administrator' | 'Nutzer'
 
 export interface User {
-  id: string
-  name: string
-  email: string
+  id: number
+  username: string
   role: Role
-  familyId: string
-  avatarInitials?: string
 }
 
 export interface WidgetConfig {
@@ -15,11 +12,9 @@ export interface WidgetConfig {
   description: string
   component: React.ComponentType<WidgetProps>
   defaultSize: 'small' | 'medium' | 'large'
-  /** Minimum role required to see this widget */
   requiredRole?: Role
 }
 
 export interface WidgetProps {
-  /** Config passed from the dashboard (e.g. selected city, person) */
   settings?: Record<string, unknown>
 }
