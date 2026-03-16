@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 export interface CalendarSettingsData {
   defaultView: 'month' | 'week'
@@ -33,7 +34,7 @@ export default function CalendarSettings({ settings, onSave, onCancel }: Props) 
     fontFamily: 'inherit',
   }
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -42,7 +43,7 @@ export default function CalendarSettings({ settings, onSave, onCancel }: Props) 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 50,
+        zIndex: 9999,
       }}
     >
       <div
@@ -173,6 +174,7 @@ export default function CalendarSettings({ settings, onSave, onCancel }: Props) 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

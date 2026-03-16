@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type { CalendarEvent, GoogleCalendarInfo, EventFormData, } from './types'
 import { EVENT_COLORS } from './types'
 
@@ -60,7 +61,7 @@ export default function EventModal({ event, calendars, defaultDate, onSave, onDe
     fontFamily: 'inherit',
   }
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -69,7 +70,7 @@ export default function EventModal({ event, calendars, defaultDate, onSave, onDe
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 50,
+        zIndex: 9999,
       }}
     >
       <div
@@ -230,6 +231,7 @@ export default function EventModal({ event, calendars, defaultDate, onSave, onDe
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

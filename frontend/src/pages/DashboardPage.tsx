@@ -120,7 +120,7 @@ export default function DashboardPage() {
           if (isWeather) {
             const WeatherComponent = config.component
             return (
-              <div key={instance.instanceId} className="rounded-2xl p-5 relative group" style={{ background: '#7c9a7e' }}>
+              <div key={instance.instanceId} className="rounded-2xl p-5 relative group" style={{ background: '#7c9a7e', overflow: 'auto' }}>
                 <div className="widget-drag-handle absolute top-2 left-2 right-2 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <div className="w-8 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.4)' }} />
                 </div>
@@ -135,7 +135,7 @@ export default function DashboardPage() {
               <div
                 key={instance.instanceId}
                 className="rounded-2xl p-5 relative group"
-                style={{ background: '#ffffff', border: '1px solid #e8e8e2' }}
+                style={{ background: '#ffffff', border: '1px solid #e8e8e2', overflow: 'auto' }}
               >
                 {/* Drag handle */}
                 <div className="widget-drag-handle absolute top-2 left-2 right-10 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -170,7 +170,7 @@ export default function DashboardPage() {
             <div
               key={instance.instanceId}
               className="rounded-2xl p-5 relative group"
-              style={{ background: '#ffffff', border: '1px solid #e8e8e2' }}
+              style={{ background: '#ffffff', border: '1px solid #e8e8e2', overflow: 'auto' }}
             >
               <div className="widget-drag-handle absolute top-2 left-2 right-2 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <div className="w-8 h-1 rounded-full" style={{ background: '#d4d4cc' }} />
