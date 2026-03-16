@@ -6,10 +6,19 @@ import GoogleAuthButton from './GoogleAuthButton'
 import MonthView from './MonthView'
 import WeekView from './WeekView'
 import EventModal from './EventModal'
+import CalendarSettings from './CalendarSettings'
+import type { CalendarSettingsData } from './CalendarSettings'
 
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone
 
-export default function CalendarWidget(_props: WidgetProps) {
+export default function CalendarWidget({ settings, onSettingsChange }: WidgetProps & { onSettingsChange?: (s: Record<string, unknown>) => void }) {
+  const calSettings: CalendarSettingsData = {
+    defaultView: (settings?.defaultView as 'month' | 'week') ?? 'month',
+    showWeekends: (settings?.showWeekends as boolean) ?? true,
+    weekStartHour: (settings?.weekStartHour as number) ?? 6,
+    weekEndHour: (settings?.weekEndHour as number) ?? 22,
+  }
+
   const {
     isSignedIn,
     isLoading,
@@ -24,9 +33,12 @@ export default function CalendarWidget(_props: WidgetProps) {
     deleteEvent,
   } = useGoogleCalendar()
 
+  /* ── Settings modal state ─────────────────────────────────── */
+  const [showSettings, setShowSettings] = useState(false)
+
   /* ── View state ───────────────────────────────────────────── */
   const today = new Date()
-  const [viewMode, setViewMode] = useState<ViewMode>('month')
+  const [viewMode, setViewMode] = useState<ViewMode>(calSettings.defaultView)
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
   const [weekOffset, setWeekOffset] = useState(0)
@@ -202,6 +214,14 @@ export default function CalendarWidget(_props: WidgetProps) {
           >
             +
           </button>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="w-7 h-7 rounded-lg text-sm flex items-center justify-center flex-shrink-0"
+            style={{ background: '#f4f4f0', border: 'none', cursor: 'pointer', color: '#9e9e96' }}
+            title="Einstellungen"
+          >
+            ⚙
+          </button>
           <GoogleAuthButton isSignedIn={isSignedIn} onSignIn={signIn} onSignOut={signOut} />
         </div>
       </div>
@@ -233,6 +253,9 @@ export default function CalendarWidget(_props: WidgetProps) {
             onNextWeek={nextWeek}
             onEventClick={handleEventClick}
             onAddEvent={handleAddEvent}
+            showWeekends={calSettings.showWeekends}
+            startHour={calSettings.weekStartHour}
+            endHour={calSettings.weekEndHour}
           />
         )}
       </div>
@@ -246,6 +269,20 @@ export default function CalendarWidget(_props: WidgetProps) {
           onSave={handleSave}
           onDelete={modalMode === 'edit' ? handleDelete : undefined}
           onCancel={() => { setModalMode(null); setModalEvent(null) }}
+        />
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <CalendarSettings
+          settings={calSettings}
+          onSave={(newSettings) => {
+            if (onSettingsChange) {
+              onSettingsChange(newSettings as unknown as Record<string, unknown>)
+            }
+            setShowSettings(false)
+          }}
+          onCancel={() => setShowSettings(false)}
         />
       )}
     </div>

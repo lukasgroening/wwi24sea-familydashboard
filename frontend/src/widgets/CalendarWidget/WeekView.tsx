@@ -1,7 +1,6 @@
 import type { CalendarEvent } from './types'
 
-const HOURS = Array.from({ length: 17 }, (_, i) => i + 6) // 06:00 – 22:00
-const DAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+const DAY_LABELS_FULL = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 
 function getWeekDates(refDate: Date): Date[] {
   const d = new Date(refDate)
@@ -20,7 +19,7 @@ function isSameDay(a: Date, b: Date) {
 
 function getWeekLabel(dates: Date[]): string {
   const first = dates[0]
-  const last = dates[6]
+  const last = dates[dates.length - 1]
   const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
   if (first.getMonth() === last.getMonth()) {
     return `${first.getDate()}. – ${last.toLocaleDateString('de-DE', opts)} ${first.getFullYear()}`
@@ -35,13 +34,24 @@ interface Props {
   onNextWeek: () => void
   onEventClick: (event: CalendarEvent) => void
   onAddEvent: (date: string) => void
+  showWeekends?: boolean
+  startHour?: number
+  endHour?: number
 }
 
-export default function WeekView({ weekOffset, events, onPrevWeek, onNextWeek, onEventClick, onAddEvent }: Props) {
+export default function WeekView({ weekOffset, events, onPrevWeek, onNextWeek, onEventClick, onAddEvent, showWeekends = true, startHour = 6, endHour = 22 }: Props) {
   const today = new Date()
   const refDate = new Date(today)
   refDate.setDate(refDate.getDate() + weekOffset * 7)
-  const weekDates = getWeekDates(refDate)
+  const allWeekDates = getWeekDates(refDate)
+
+  // Filter weekends if configured
+  const weekDates = showWeekends ? allWeekDates : allWeekDates.slice(0, 5)
+  const DAY_LABELS = showWeekends ? DAY_LABELS_FULL : DAY_LABELS_FULL.slice(0, 5)
+
+  // Build hours array from settings
+  const HOURS = Array.from({ length: endHour - startHour + 1 }, (_, i) => i + startHour)
+  const startMinutesOffset = startHour * 60
 
   // Map events to days
   const eventsByDay: CalendarEvent[][] = weekDates.map((d) =>
@@ -60,7 +70,7 @@ export default function WeekView({ weekOffset, events, onPrevWeek, onNextWeek, o
     const end = new Date(ev.end)
     const startMinutes = start.getHours() * 60 + start.getMinutes()
     const endMinutes = end.getHours() * 60 + end.getMinutes()
-    const top = ((startMinutes - 360) / 60) * HOUR_HEIGHT // 360 = 6:00
+    const top = ((startMinutes - startMinutesOffset) / 60) * HOUR_HEIGHT
     const height = Math.max(((endMinutes - startMinutes) / 60) * HOUR_HEIGHT, 20)
     return { top, height }
   }
@@ -199,7 +209,7 @@ export default function WeekView({ weekOffset, events, onPrevWeek, onNextWeek, o
                 {/* Current time indicator */}
                 {isToday_ && (() => {
                   const nowMinutes = today.getHours() * 60 + today.getMinutes()
-                  const top = ((nowMinutes - 360) / 60) * HOUR_HEIGHT
+                  const top = ((nowMinutes - startMinutesOffset) / 60) * HOUR_HEIGHT
                   if (top < 0 || top > HOURS.length * HOUR_HEIGHT) return null
                   return (
                     <div

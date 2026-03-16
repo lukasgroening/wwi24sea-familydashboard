@@ -19,6 +19,20 @@ export interface WidgetConfig {
   requiredRole?: Role
 }
 
+/** A widget instance placed on the dashboard */
+export interface DashboardWidgetInstance {
+  /** Unique instance id */
+  instanceId: string
+  /** References WidgetConfig.id */
+  widgetId: string
+  /** Column span in 12-col grid */
+  colSpan: number
+  /** Row span */
+  rowSpan: number
+  /** User-defined settings for this instance */
+  settings: Record<string, unknown>
+}
+
 export interface WidgetProps {
   /** Config passed from the dashboard (e.g. selected city, person) */
   settings?: Record<string, unknown>
