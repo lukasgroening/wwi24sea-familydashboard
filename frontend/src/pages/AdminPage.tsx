@@ -38,6 +38,7 @@ export default function AdminPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [form, setForm] = useState({ username: '', password: '', role: 'Nutzer' as Role })
   const [formError, setFormError] = useState('')
+  const [deleteError, setDeleteError] = useState('')
 
   const { data: users = [], isLoading, error } = useQuery<User[]>({
     queryKey: ['users'],
@@ -76,6 +77,11 @@ export default function AdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       setDeleteConfirm(null)
+      setDeleteError('')
+    },
+    onError: (err: any) => {
+      setDeleteError(err.response?.data?.detail ?? 'Fehler beim Löschen.')
+      setDeleteConfirm(null)
     },
   })
 
@@ -110,8 +116,9 @@ export default function AdminPage() {
   }
 
   return (
+    <div className="flex-1 p-6 md:p-8 overflow-y-auto">
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-semibold">Mitgliederverwaltung</h1>
           <p className="text-sm mt-0.5" style={{ color: '#9e9e96' }}>
@@ -134,7 +141,7 @@ export default function AdminPage() {
             {editUser ? `Benutzer bearbeiten: ${editUser.username}` : 'Neuen Benutzer anlegen'}
           </h2>
           <form onSubmit={editUser ? handleUpdate : handleCreate} className="flex flex-col gap-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Benutzername</label>
                 <input
@@ -200,6 +207,23 @@ export default function AdminPage() {
         </div>
       )}
 
+      {/* Delete Error */}
+      {deleteError && (
+        <div
+          className="flex items-center justify-between text-sm px-4 py-3 rounded-xl"
+          style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}
+        >
+          <span>{deleteError}</span>
+          <button
+            onClick={() => setDeleteError('')}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#b91c1c', fontSize: '16px', lineHeight: 1 }}
+            aria-label="Schließen"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* User List */}
       <div style={cardStyle}>
         {isLoading && <p className="text-sm" style={{ color: '#9e9e96' }}>Lade Benutzer...</p>}
@@ -208,6 +232,7 @@ export default function AdminPage() {
           <p className="text-sm" style={{ color: '#9e9e96' }}>Keine Benutzer gefunden.</p>
         )}
         {users.length > 0 && (
+          <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #e8e8e2' }}>
@@ -272,8 +297,10 @@ export default function AdminPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
+    </div>
     </div>
   )
 }

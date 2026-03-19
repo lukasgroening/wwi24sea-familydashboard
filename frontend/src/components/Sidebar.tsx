@@ -1,6 +1,11 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 
+interface SidebarProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
 const navItems = [
   { label: 'Dashboard', to: '/', icon: '⊞' },
   { label: 'Kalender', to: '/calendar', icon: '◻' },
@@ -11,7 +16,7 @@ const adminItems = [
   { label: 'Mitglieder', to: '/admin/members', icon: '◻' },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
 
@@ -23,12 +28,25 @@ export default function Sidebar() {
   const isAdmin = user?.role === 'Familien-Administrator' || user?.role === 'System-Administrator'
 
   return (
-    <aside className="w-56 flex flex-col gap-7 flex-shrink-0 py-7 px-4" style={{ background: '#eeeee9', borderRight: '1px solid #e0e0d8' }}>
-      <div className="flex items-center gap-2.5 px-2">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-base" style={{ background: '#7c9a7e' }}>
-          ⌂
+    <aside
+      className={`w-56 flex flex-col gap-7 flex-shrink-0 py-7 px-4 fixed inset-y-0 left-0 z-50 transition-transform duration-300 md:relative md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      style={{ background: '#eeeee9', borderRight: '1px solid #e0e0d8' }}
+    >
+      <div className="flex items-center justify-between px-2">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-base" style={{ background: '#7c9a7e' }}>
+            ⌂
+          </div>
+          <span className="font-semibold text-sm">FamilyBoard</span>
         </div>
-        <span className="font-semibold text-sm">FamilyBoard</span>
+        <button
+          onClick={onClose}
+          className="md:hidden p-1 rounded-lg text-base leading-none"
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#7a7a72' }}
+          aria-label="Menü schließen"
+        >
+          ✕
+        </button>
       </div>
 
       <nav className="flex flex-col gap-0.5 flex-1">
@@ -40,6 +58,7 @@ export default function Sidebar() {
             key={item.to}
             to={item.to}
             end
+            onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${isActive ? 'font-medium' : ''}`
             }
@@ -63,6 +82,7 @@ export default function Sidebar() {
               <NavLink
                 key={item.to}
                 to={item.to}
+                onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${isActive ? 'font-medium' : ''}`
                 }
