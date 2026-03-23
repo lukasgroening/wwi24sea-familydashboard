@@ -19,7 +19,7 @@ export const WIDGETS: WidgetConfig[] = [
     description: 'Aktuelle Wetterinfos für einen Standort',
     component: WeatherWidget,
     defaultSize: 'small',
-    requiredRole: 'user',
+    requiredRole: 'Nutzer',
   },
   {
     id: 'todo',
@@ -27,7 +27,7 @@ export const WIDGETS: WidgetConfig[] = [
     description: 'Gemeinsame Aufgabenliste der Familie',
     component: TodoWidget,
     defaultSize: 'medium',
-    requiredRole: 'user',
+    requiredRole: 'Nutzer',
   },
   {
     id: 'calendar',
@@ -35,7 +35,7 @@ export const WIDGETS: WidgetConfig[] = [
     description: 'Termine und Events der Familie',
     component: CalendarWidget,
     defaultSize: 'large',
-    requiredRole: 'user',
+    requiredRole: 'Nutzer',
   },
   {
     id: 'schedule',
@@ -43,6 +43,6 @@ export const WIDGETS: WidgetConfig[] = [
     description: 'Schulplan für Kinder und Au Pairs',
     component: ScheduleWidget,
     defaultSize: 'medium',
-    requiredRole: 'user',
+    requiredRole: 'Nutzer',
   },
 ]

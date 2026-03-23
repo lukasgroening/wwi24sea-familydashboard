@@ -9,9 +9,9 @@ import WeatherWidget from '../widgets/WeatherWidget'
 
 function canSeeWidget(widgetRole: Role | undefined, userRole: Role | undefined): boolean {
   if (!widgetRole) return true
-  if (userRole === 'sysadmin') return true
-  if (userRole === 'admin') return true
-  return widgetRole === 'user'
+  if (userRole === 'System-Administrator') return true
+  if (userRole === 'Familien-Administrator') return true
+  return widgetRole === 'Nutzer'
 }
 
 function getGreeting() {
@@ -76,11 +76,11 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between mb-7">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight" style={{ color: '#1a1a1a' }}>
-            {getGreeting()}{user?.name ? `, ${user.name}` : ''} 👋
+            {getGreeting()}{user?.username ? `, ${user.username}` : ''} 👋
           </h1>
           <p className="text-sm mt-1" style={{ color: '#9e9e96' }}>{todayStr}</p>
         </div>
-        {(user?.role === 'admin' || user?.role === 'sysadmin') && (
+        {(user?.role === 'Familien-Administrator' || user?.role === 'System-Administrator') && (
           <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-sm font-medium"

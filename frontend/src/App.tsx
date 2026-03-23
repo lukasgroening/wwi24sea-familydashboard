@@ -4,6 +4,7 @@ import AuthGuard from './components/AuthGuard'
 import AppLayout from './pages/AppLayout'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
+import AdminPage from './pages/AdminPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,7 +27,14 @@ export default function App() {
             }
           >
             <Route index element={<DashboardPage />} />
-            {/* Weitere Seiten kommen hier rein */}
+            <Route
+              path="/admin/members"
+              element={
+                <AuthGuard requiredRole="Familien-Administrator">
+                  <AdminPage />
+                </AuthGuard>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

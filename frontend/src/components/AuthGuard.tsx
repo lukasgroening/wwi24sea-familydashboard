@@ -12,7 +12,7 @@ export default function AuthGuard({ children, requiredRole }: Props) {
 
   if (!isAuthenticated()) return <Navigate to="/login" replace />
 
-  if (requiredRole && user?.role !== requiredRole && user?.role !== 'sysadmin') {
+  if (requiredRole && user?.role !== requiredRole && user?.role !== 'System-Administrator') {
     return <Navigate to="/" replace />
   }
 
