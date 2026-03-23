@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import type { GeoLocation } from '../../lib/weatherApi'
 
 interface Props {
-  onSelect: (location: GeoLocation) => void
+  onSelect: (location: { name: string; country: string }) => void
   onClose: () => void
   searchCities: (query: string) => Promise<GeoLocation[]>
 }
@@ -39,7 +39,7 @@ export default function LocationSearch({ onSelect, onClose, searchCities }: Prop
   }
 
   function handleSelect(loc: GeoLocation) {
-    onSelect(loc)
+    onSelect({ name: loc.name, country: loc.country })
     onClose()
   }
 

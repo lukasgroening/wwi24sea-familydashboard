@@ -5,13 +5,8 @@ import { searchCities } from '../../lib/weatherApi'
 
 export interface WeatherSettingsData {
   locationName: string
-  locationLat: number
-  locationLon: number
   locationCountry: string
   temperatureUnit: 'celsius' | 'fahrenheit'
-  showForecast: boolean
-  showMeteogram: boolean
-  forecastDays: number
 }
 
 interface Props {
@@ -65,8 +60,6 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
     setForm((f) => ({
       ...f,
       locationName: loc.name,
-      locationLat: loc.lat,
-      locationLon: loc.lon,
       locationCountry: loc.country,
     }))
     setShowLocationSearch(false)
@@ -107,15 +100,15 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
             Wetter-Einstellungen
           </div>
           <div className="text-xs mt-0.5" style={{ color: '#9e9e96' }}>
-            Konfiguriere Datenquelle und Darstellung des Wetter-Widgets
+            Standort und Darstellung des Wetter-Widgets konfigurieren
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
-          {/* Location / Datenquelle */}
+          {/* Location */}
           <div>
             <label className="text-xs mb-1.5 block font-medium" style={{ color: '#4a4a44' }}>
-              Standort (Datenquelle)
+              Standort
             </label>
             {!showLocationSearch ? (
               <button
@@ -214,73 +207,6 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Show Forecast */}
-          <div>
-            <label className="flex items-center gap-2.5 cursor-pointer">
-              <div
-                className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-xs transition-colors"
-                style={{
-                  border: form.showForecast ? 'none' : '1.5px solid #c8c8c0',
-                  background: form.showForecast ? '#7c9a7e' : 'transparent',
-                  color: 'white',
-                }}
-                onClick={() => setForm((f) => ({ ...f, showForecast: !f.showForecast }))}
-              >
-                {form.showForecast && '✓'}
-              </div>
-              <div>
-                <span className="text-sm" style={{ color: '#4a4a44' }}>Vorhersage anzeigen</span>
-                <span className="block text-xs" style={{ color: '#9e9e96' }}>
-                  Mehrtägige Wettervorhersage ein-/ausblenden
-                </span>
-              </div>
-            </label>
-          </div>
-
-          {/* Forecast Days */}
-          {form.showForecast && (
-            <div>
-              <label className="text-xs mb-1.5 block font-medium" style={{ color: '#4a4a44' }}>
-                Vorhersage-Tage
-              </label>
-              <select
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none border"
-                style={inputStyle}
-                value={form.forecastDays}
-                onChange={(e) => setForm((f) => ({ ...f, forecastDays: Number(e.target.value) }))}
-              >
-                {[3, 5, 7].map((d) => (
-                  <option key={d} value={d}>
-                    {d} Tage
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Show Meteogram */}
-          <div>
-            <label className="flex items-center gap-2.5 cursor-pointer">
-              <div
-                className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-xs transition-colors"
-                style={{
-                  border: form.showMeteogram ? 'none' : '1.5px solid #c8c8c0',
-                  background: form.showMeteogram ? '#7c9a7e' : 'transparent',
-                  color: 'white',
-                }}
-                onClick={() => setForm((f) => ({ ...f, showMeteogram: !f.showMeteogram }))}
-              >
-                {form.showMeteogram && '✓'}
-              </div>
-              <div>
-                <span className="text-sm" style={{ color: '#4a4a44' }}>Meteogramm-Link anzeigen</span>
-                <span className="block text-xs" style={{ color: '#9e9e96' }}>
-                  Link zum detaillierten Meteogramm ein-/ausblenden
-                </span>
-              </div>
-            </label>
           </div>
         </div>
 
