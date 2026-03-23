@@ -92,11 +92,17 @@ def update_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user_id: int, session: Session = Depends(get_session)):
+def delete_user(user_id: int, current_user: User = Depends(require_admin), session: Session = Depends(get_session)):
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Benutzer nicht gefunden."
+        )
+
+    if user.id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Du kannst deinen eigenen Account nicht löschen.",
         )
 
     _check_last_admin(session, user, "gelöscht")
