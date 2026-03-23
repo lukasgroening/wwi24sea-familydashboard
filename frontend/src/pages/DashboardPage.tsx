@@ -49,13 +49,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Bento Grid */}
-      <div className="grid grid-cols-12 gap-3.5">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
         {/* Weather — small */}
         {visibleWidgets.find((w) => w.id === 'weather') && (() => {
           const WeatherWidget = WIDGETS.find((w) => w.id === 'weather')!.component
           return (
             <div
-              className="col-span-3 rounded-2xl p-5"
+              className="col-span-1 md:col-span-3 rounded-2xl p-5"
               style={{ background: '#7c9a7e', minHeight: '180px' }}
             >
               <WeatherWidget />
@@ -63,11 +63,11 @@ export default function DashboardPage() {
           )
         })()}
 
-        {/* Calendar — big, spans 2 rows */}
+        {/* Calendar — big, spans 2 rows on desktop */}
         {visibleWidgets.find((w) => w.id === 'calendar') && (
           <WidgetCard
             widget={WIDGETS.find((w) => w.id === 'calendar')!}
-            className="col-span-5 row-span-2"
+            className="col-span-1 md:col-span-5 md:row-span-2"
             style={{ minHeight: '420px' }}
           />
         )}
@@ -76,7 +76,7 @@ export default function DashboardPage() {
         {visibleWidgets.find((w) => w.id === 'todo') && (
           <WidgetCard
             widget={WIDGETS.find((w) => w.id === 'todo')!}
-            className="col-span-4"
+            className="col-span-1 md:col-span-4"
             style={{ minHeight: '180px' }}
           />
         )}
@@ -85,7 +85,7 @@ export default function DashboardPage() {
         {visibleWidgets.find((w) => w.id === 'schedule') && (
           <WidgetCard
             widget={WIDGETS.find((w) => w.id === 'schedule')!}
-            className="col-span-7"
+            className="col-span-1 md:col-span-7"
             style={{ minHeight: '220px' }}
           />
         )}
