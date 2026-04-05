@@ -39,7 +39,7 @@ Tool: pip (Python Package Manager)
 
 Ergebnis: Python packages im venv oder global
  
-Keine Compilation nötig:
+**Keine Compilation nötig:**
 
 - Python ist interpretierte Sprache → Code wird zur Laufzeit ausgeführt
 - Optional: Linting
@@ -47,11 +47,11 @@ Keine Compilation nötig:
 
 ## Docker
  
-**Docker Images bauen:**
+### Docker Images bauen:
  
 `docker-compose build` oder `docker-compose up --build`
 
-**Docker Frontend:**
+### Docker Frontend:
 
 ```
 FROM node:20-alpine          # Base Image laden (150 MB)
@@ -62,7 +62,7 @@ COPY . .                     # Source Code kopieren (5 MB)
 EXPOSE 5173                  # Port deklarieren
 CMD ["npm", "run", "dev"]    # Start-Kommando
 ```
-**Docker Backend:**
+### Docker Backend:
 
 ```
 FROM python:3.11-slim        # Base Image laden (300 MB)
