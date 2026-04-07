@@ -3,12 +3,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Session, select
 from auth import get_password_hash
-from routers import auth_router, users, notes, todos, weather, schedule
+from routers import auth_router, users, notes, todos, weather, schedule, calendar
 from models.user import Role, User
 from database import engine
 
-from models import note, schedule  # noqa: F401
+from models import note, schedule, calendar  # noqa: F401
 from models.note import Note
+from models.calendar import CalendarEvent, CalendarSource
 
 
 def create_seed_data():
@@ -45,6 +46,39 @@ def create_seed_data():
             session.commit()
             print("Dummy-Notizen erfolgreich angelegt!")
 
+        # 3. Calendar Seed
+        existing_event = session.exec(select(CalendarEvent)).first()
+        if not existing_event:
+            from datetime import datetime, timedelta
+            print("Erstelle Dummy-Kalenderdaten...")
+            ev1 = CalendarEvent(
+                title="Wocheneinkauf",
+                start_time=datetime.now().replace(hour=10, minute=0),
+                end_time=datetime.now().replace(hour=11, minute=0),
+                location="Supermarkt",
+                color="#7c9a7e"
+            )
+            ev2 = CalendarEvent(
+                title="Abendessen Familie",
+                start_time=(datetime.now() + timedelta(days=1)).replace(hour=18, minute=30),
+                end_time=(datetime.now() + timedelta(days=1)).replace(hour=20, minute=0),
+                color="#a8c4a8"
+            )
+            session.add(ev1)
+            session.add(ev2)
+            
+            # Add a public ICS source (e.g., German Holidays or similar if desired)
+            # For now, just a dummy source that the user can see/edit
+            source1 = CalendarSource(
+                name="Beispiel Externer Kalender",
+                url="https://p21-caldav.icloud.com/published/2/...", # Placeholder
+                active=False
+            )
+            session.add(source1)
+            
+            session.commit()
+            print("Dummy-Kalenderdaten erfolgreich angelegt!")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -74,6 +108,7 @@ app.include_router(users.router)
 app.include_router(todos.router)
 app.include_router(weather.router)
 app.include_router(schedule.router)
+app.include_router(calendar.router)
 
 
 @app.get("/api/health")
