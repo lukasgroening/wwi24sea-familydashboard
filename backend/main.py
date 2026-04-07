@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Session, select
 from auth import get_password_hash
-from routers import auth_router, users, notes, todos, weather, schedule
+from routers import auth_router, users, notes, todos, weather, schedules, dashboard
 from models.user import Role, User
 from database import engine
 
@@ -17,7 +17,6 @@ def create_seed_data():
         existing_user = session.exec(select(User)).first()
         if not existing_user:
             print("Erstelle Dummy-Admin User...")
-            # Wir nutzen das Enum und hashen das Passwort "geheim123"
             dummy_admin = User(
                 username="Mama_Admin",
                 hashed_password=get_password_hash("geheim123123"),
@@ -49,13 +48,11 @@ def create_seed_data():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Server fährt hoch... Erstelle Tabellen!")
-    # 1. Erstellt die Datenbank und alle Tabellen (falls sie noch nicht existieren)
     SQLModel.metadata.create_all(engine)
 
-    # 2. Führt unser Seed-Skript aus
     create_seed_data()
 
-    yield  # Hier läuft der Server und wartet auf Frontend-Anfragen
+    yield
 
 
 app = FastAPI(title="Family Dashboard API", lifespan=lifespan)
@@ -73,7 +70,8 @@ app.include_router(auth_router.router)
 app.include_router(users.router)
 app.include_router(todos.router)
 app.include_router(weather.router)
-app.include_router(schedule.router)
+app.include_router(schedules.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/api/health")
