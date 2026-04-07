@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Session, select
 from auth import get_password_hash
-from routers import auth_router, users, notes, todos, weather, schedules, calendars
+from routers import auth_router, users, notes, todos, weather, schedules, dashboard, calendars
 from models.user import Role, User
 from database import engine
 
@@ -110,6 +110,7 @@ app.include_router(todos.router)
 app.include_router(weather.router)
 app.include_router(schedules.router)
 app.include_router(calendars.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/api/health")
