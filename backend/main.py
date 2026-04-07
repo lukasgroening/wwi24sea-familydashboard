@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +19,6 @@ def create_seed_data():
         existing_user = session.exec(select(User)).first()
         if not existing_user:
             print("Erstelle Dummy-Admin User...")
-            # Wir nutzen das Enum und hashen das Passwort "geheim123"
             dummy_admin = User(
                 username="Mama_Admin",
                 hashed_password=get_password_hash("geheim123123"),
@@ -28,6 +28,7 @@ def create_seed_data():
             session.commit()
             print("Dummy-Admin erfolgreich angelegt!")
 
+        # 2. Notes Seed
         existing_note = session.exec(select(Note)).first()
 
         if not existing_note:
@@ -67,7 +68,7 @@ def create_seed_data():
             session.add(ev1)
             session.add(ev2)
             
-            # Add a public ICS source (e.g., German Holidays or similar if desired)
+            # Add a public ICS source
             # For now, just a dummy source that the user can see/edit
             source1 = CalendarSource(
                 name="Beispiel Externer Kalender",
@@ -83,20 +84,20 @@ def create_seed_data():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Server fährt hoch... Erstelle Tabellen!")
-    # 1. Erstellt die Datenbank und alle Tabellen (falls sie noch nicht existieren)
     SQLModel.metadata.create_all(engine)
 
-    # 2. Führt unser Seed-Skript aus
     create_seed_data()
 
-    yield  # Hier läuft der Server und wartet auf Frontend-Anfragen
+    yield
 
 
 app = FastAPI(title="Family Dashboard API", lifespan=lifespan)
 
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: limit to only exact frontend-URL
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

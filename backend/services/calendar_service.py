@@ -1,9 +1,8 @@
 import requests
 from icalendar import Calendar
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from typing import List
 from models.calendar import CalendarEventPublic, CalendarSource
-import pytz
 
 def fetch_external_events(source: CalendarSource) -> List[CalendarEventPublic]:
     """
@@ -11,15 +10,12 @@ def fetch_external_events(source: CalendarSource) -> List[CalendarEventPublic]:
     """
     events = []
     try:
-        # 1. Fetch the ICS content
         response = requests.get(source.url, timeout=10)
         response.raise_for_status()
         
-        # 2. Parse the calendar
         gcal = Calendar.from_ical(response.content)
         
-        # We only want events within a reasonable timeframe (e.g., -1 month to +1 year)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         start_threshold = now - timedelta(days=31)
         end_threshold = now + timedelta(days=365)
 
@@ -32,19 +28,16 @@ def fetch_external_events(source: CalendarSource) -> List[CalendarEventPublic]:
                 start = component.get('dtstart').dt
                 end = component.get('dtend').dt if component.get('dtend') else start
                 
-                # Normalize to datetime (some are just 'date' objects)
                 if isinstance(start, date) and not isinstance(start, datetime):
-                    start = datetime.combine(start, datetime.min.time()).replace(tzinfo=pytz.UTC)
+                    start = datetime.combine(start, datetime.min.time()).replace(tzinfo=timezone.utc)
                 if isinstance(end, date) and not isinstance(end, datetime):
-                    end = datetime.combine(end, datetime.min.time()).replace(tzinfo=pytz.UTC)
+                    end = datetime.combine(end, datetime.min.time()).replace(tzinfo=timezone.utc)
                 
-                # Ensure tzinfo is present (assume UTC if missing)
                 if start.tzinfo is None:
-                    start = start.replace(tzinfo=pytz.UTC)
+                    start = start.replace(tzinfo=timezone.utc)
                 if end.tzinfo is None:
-                    end = end.replace(tzinfo=pytz.UTC)
+                    end = end.replace(tzinfo=timezone.utc)
 
-                # Filter by timeframe
                 if start > end_threshold or end < start_threshold:
                     continue
 
@@ -60,6 +53,5 @@ def fetch_external_events(source: CalendarSource) -> List[CalendarEventPublic]:
                 ))
     except Exception as e:
         print(f"Error fetching calendar source '{source.name}': {e}")
-        # In a real app, we might want to log this or return a partial result
     
     return events
