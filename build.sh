@@ -1,71 +1,51 @@
 #!/usr/bin/env bash
 # ============================================================
 #  Family Dashboard — Build Script
-#  Führt alle Schritte aus, um die Anwendung zu bauen und
-#  lokal bereitzustellen.
 #
 #  Verwendete Tools:
-#    - npm / tsc   → Frontend-Abhängigkeiten & TypeScript-Check
-#    - vite        → Frontend-Bundle (Produktion)
-#    - eslint      → Statische Code-Analyse (Frontend)
-#    - pip         → Backend-Abhängigkeiten
-#    - docker      → Container-Build & Start
+#    - vitest  → Frontend Unit-Tests
+#    - pytest  → Backend Unit- & Integrationstests
+#    - docker  → Container-Build & Start
 # ============================================================
 
-set -e  # Bricht ab, sobald ein Schritt fehlschlägt
+set -e
 
 # ---------- Farben für die Ausgabe ----------
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color (Reset)
+NC='\033[0m'
 
 step() { echo -e "\n${BLUE}==>${NC} $1"; }
 ok()   { echo -e "${GREEN}✔ $1${NC}"; }
 fail() { echo -e "${RED}✘ $1${NC}"; exit 1; }
 
 # ============================================================
-# 1. FRONTEND — Abhängigkeiten installieren
+# 1. FRONTEND — Unit-Tests (vitest)
 # ============================================================
-step "[1/5] Frontend-Abhängigkeiten installieren (npm install)"
+step "[1/3] Frontend-Tests ausführen (vitest)"
 cd frontend
-npm install
-ok "node_modules bereit"
-
-# ============================================================
-# 2. FRONTEND — Statische Code-Analyse (Linting)
-# ============================================================
-step "[2/5] Frontend Linting (eslint)"
-if npm run lint; then
-  ok "Keine Lint-Fehler"
-else
-  echo -e "${RED}⚠ ESLint-Warnungen gefunden — Build wird trotzdem fortgesetzt${NC}"
-fi
-
-# ============================================================
-# 3. FRONTEND — TypeScript prüfen + Produktions-Bundle bauen
-#    tsc -b   → TypeScript-Compiler prüft alle Typen
-#    vite build → bündelt React-App in optimierte statische Dateien (dist/)
-# ============================================================
-step "[3/5] Frontend bauen (tsc + vite build)"
-npm run build
-ok "Frontend-Bundle liegt in frontend/dist/"
-
+npm install --silent
+npm test || fail "Frontend-Tests fehlgeschlagen — Build abgebrochen"
 cd ..
+ok "Alle Frontend-Tests bestanden"
 
 # ============================================================
-# 4. BACKEND — Abhängigkeiten installieren
+# 2. BACKEND — Unit- & Integrationstests (pytest)
 # ============================================================
-step "[4/5] Backend-Abhängigkeiten installieren (pip)"
+step "[2/3] Backend-Tests ausführen (pytest)"
 pip install --quiet -r backend/requirements.txt
-ok "Python-Pakete installiert"
+cd backend
+pytest tests/ -v || fail "Backend-Tests fehlgeschlagen — Build abgebrochen"
+cd ..
+ok "Alle Backend-Tests bestanden"
 
 # ============================================================
-# 5. DOCKER — Beide Container bauen und starten
-#    --build  → Images neu bauen (kein Cache)
-#    -d       → Im Hintergrund starten
+# 3. DOCKER — Container bauen und starten
+#    --build → Images neu bauen
+#    -d      → Im Hintergrund starten
 # ============================================================
-step "[5/5] Docker-Container bauen und starten (docker-compose)"
+step "[3/3] Docker-Container bauen und starten (docker-compose)"
 docker-compose up --build -d
 ok "Anwendung läuft!"
 

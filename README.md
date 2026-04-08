@@ -17,6 +17,8 @@ Demo-Login: `Mama_Admin` / `geheim123123`
 
 Zum Stoppen: `docker-compose down`
 
+> **Windows:** Das Script erfordert eine Bash-Umgebung. Git Bash oder WSL (Windows Subsystem for Linux) verwenden.
+
 ---
 
 # Buildscript
