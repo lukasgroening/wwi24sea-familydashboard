@@ -19,6 +19,7 @@ python-dotenv==1.2.2
 python-multipart==0.0.22
 PyYAML==6.0.3
 requests==2.32.5
+ruff==0.15.9
 SQLAlchemy==2.0.48
 sqlmodel==0.0.37
 starlette==0.52.1
