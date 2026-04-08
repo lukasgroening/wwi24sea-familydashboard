@@ -1,7 +1,6 @@
 from typing import Dict, Any, Optional
 from sqlmodel import SQLModel, Field
 from sqlalchemy import Column, JSON
-from models.user import User
 
 class WidgetBase(SQLModel):
     type: str

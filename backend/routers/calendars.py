@@ -25,7 +25,6 @@ def get_all_events(session: Session = Depends(get_session)):
     """
     all_events: List[CalendarEventPublic] = []
 
-    # 1. Local Events from DB
     db_events = session.exec(select(CalendarEvent)).all()
     for e in db_events:
         all_events.append(CalendarEventPublic(
@@ -39,13 +38,11 @@ def get_all_events(session: Session = Depends(get_session)):
             is_external=False
         ))
 
-    # 2. External Events from active Sources
-    active_sources = session.exec(select(CalendarSource).where(CalendarSource.active == True)).all()
+    active_sources = session.exec(select(CalendarSource).where(CalendarSource.active)).all()
     for source in active_sources:
         external_events = fetch_external_events(source)
         all_events.extend(external_events)
 
-    # Sort by start time
     all_events.sort(key=lambda x: x.start_time)
     
     return all_events
