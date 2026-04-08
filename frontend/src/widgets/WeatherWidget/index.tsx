@@ -27,7 +27,7 @@ export default function WeatherWidget({
     temperatureUnit: (settings?.temperatureUnit as 'celsius' | 'fahrenheit') ?? 'celsius',
   }
 
-  const { weather, cityName, loading, error, searchCities } = useWeather(settings)
+  const { weather, loading, error, searchCities } = useWeather(settings)
   const [showSearch, setShowSearch] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
 

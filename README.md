@@ -1,3 +1,24 @@
+# Schnellstart
+
+Die gesamte Anwendung (Frontend + Backend + Docker) lässt sich mit einem einzigen Befehl bauen und starten:
+
+```bash
+./build.sh
+```
+
+Das Script führt automatisch alle Schritte aus (npm install → Linting → TypeScript-Build → pip install → Docker-Start).
+
+Nach erfolgreichem Build ist die Anwendung erreichbar unter:
+- **Frontend:** http://localhost:8401
+- **Backend API:** http://localhost:8400
+- **API-Docs:** http://localhost:8400/docs
+
+Demo-Login: `Mama_Admin` / `geheim123123`
+
+Zum Stoppen: `docker-compose down`
+
+---
+
 # Buildscript
 ## Frontend
 ### Schritt 1: Dependencies installieren

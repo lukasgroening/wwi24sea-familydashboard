@@ -86,7 +86,7 @@ export default function TodoWidget() {
 
       // Rollback bei Fehler
       setTodos((prev) =>
-        prev.map((t) =>
+        prev.map((_t) =>
           todo.id === id ? { ...todo, is_completed: todo.is_completed } : todo,
         ),
       );
