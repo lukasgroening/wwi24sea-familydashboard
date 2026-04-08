@@ -17,8 +17,6 @@ def create_note(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    print(f"Notiz wird erstellt von: {current_user.username}")
-
     db_note = Note(title=note_in.title, content=note_in.content)
 
     session.add(db_note)
