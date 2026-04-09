@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type { WidgetProps } from '../../types'
 
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
@@ -21,7 +20,7 @@ function getFirstDayOfMonth(year: number, month: number) {
   return (new Date(year, month, 1).getDay() + 6) % 7
 }
 
-export default function CalendarWidget(_props: WidgetProps) {
+export default function CalendarWidget() {
   const today = new Date()
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() })
 

@@ -86,8 +86,8 @@ export default function TodoWidget() {
 
       // Rollback bei Fehler
       setTodos((prev) =>
-        prev.map((_t) =>
-          todo.id === id ? { ...todo, is_completed: todo.is_completed } : todo,
+        prev.map((t) =>
+          t.id === id ? todo : t
         ),
       );
     }
@@ -127,7 +127,7 @@ export default function TodoWidget() {
     );
 
     const customTags = Array.from(usedTags)
-      .filter((tag) => !TAG_OPTIONS.includes(tag as any))
+      .filter((tag) => !(TAG_OPTIONS as readonly string[]).includes(tag))
       .sort();
 
     return [FILTER_ALL, FILTER_NO_TAG, ...availableStandardTags, ...customTags];

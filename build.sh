@@ -1,62 +1,80 @@
 #!/usr/bin/env bash
-# ============================================================
-#  Family Dashboard — Build Script
-#
-#  Verwendete Tools:
-#    - vitest  → Frontend Unit-Tests
-#    - pytest  → Backend Unit- & Integrationstests
-#    - docker  → Container-Build & Start
-# ============================================================
+# ==============================================================================
+#  Family Dashboard — Optimized Build & Deploy Script
+# ==============================================================================
+#  Description:
+#    Orchestrates the multi-stage Docker build process.
+#    Ensures code quality via linting and testing before deployment.
+# ==============================================================================
 
 set -e
 
-# ---------- Farben für die Ausgabe ----------
+# ---------- Terminal Colors ----------
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
 RED='\033[0;31m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
-step() { echo -e "\n${BLUE}==>${NC} $1"; }
-ok()   { echo -e "${GREEN}✔ $1${NC}"; }
-fail() { echo -e "${RED}✘ $1${NC}"; exit 1; }
+# ---------- Helper Functions ----------
+header() {
+    echo -e "\n${CYAN}==============================================================================${NC}"
+    echo -e "${CYAN}  $1${NC}"
+    echo -e "${CYAN}==============================================================================${NC}"
+}
 
-# ============================================================
-# 1. FRONTEND — Unit-Tests (vitest)
-# ============================================================
-step "[1/3] Frontend-Tests ausführen (vitest)"
-cd frontend
-npm install --silent
-npm test || fail "Frontend-Tests fehlgeschlagen — Build abgebrochen"
-cd ..
-ok "Alle Frontend-Tests bestanden"
+step() { echo -e "\n${BLUE}==>${NC} $1..."; }
+ok()   { echo -e "${GREEN}  ✔ $1${NC}"; }
+info() { echo -e "${YELLOW}  i $1${NC}"; }
+fail() { echo -e "${RED}  ✘ $1${NC}"; exit 1; }
 
-# ============================================================
-# 2. BACKEND — Unit- & Integrationstests (pytest)
-# ============================================================
-step "[2/3] Backend-Tests ausführen (pytest)"
-pip install --quiet -r backend/requirements.txt
-cd backend
-pytest tests/ -v || fail "Backend-Tests fehlgeschlagen — Build abgebrochen"
-cd ..
-ok "Alle Backend-Tests bestanden"
-
-# ============================================================
-# 3. DOCKER — Container bauen und starten
-#    --build → Images neu bauen
-#    -d      → Im Hintergrund starten
-# ============================================================
-step "[3/3] Docker-Container bauen und starten (docker-compose)"
-docker-compose up --build -d
-ok "Anwendung läuft!"
-
-# ---------- Fertig ----------
+# ==============================================================================
+# 0. BUILD MANIFEST (Transparent Step & Tool Overview)
+# ==============================================================================
+header "BUILD MANIFEST"
+info "The following steps will be executed inside Docker containers:"
 echo ""
-echo -e "${GREEN}============================================================${NC}"
-echo -e "${GREEN}  Build erfolgreich abgeschlossen!${NC}"
-echo -e "${GREEN}============================================================${NC}"
+echo -e "  ${YELLOW}BACKEND:${NC}"
+echo -e "    1. Linting        [Tool: Ruff]"
+echo -e "    2. Unit Tests     [Tool: Pytest]"
+echo -e "    3. Production     [Tool: Uvicorn / FastAPI]"
 echo ""
-echo "  Frontend: http://localhost:8401"
-echo "  Backend:  http://localhost:8400"
-echo "  API-Docs: http://localhost:8400/docs"
+echo -e "  ${YELLOW}FRONTEND:${NC}"
+echo -e "    1. Linting        [Tool: ESLint]"
+echo -e "    2. Unit Tests     [Tool: Vitest]"
+echo -e "    3. Build          [Tool: Vite / TypeScript]"
+echo -e "    4. Production     [Tool: Nginx (Alpine)]"
 echo ""
-echo "  Zum Stoppen: docker-compose down"
+info "Final images will be stripped of all testing tools and source maps."
+
+# ==============================================================================
+# 1. ORCHESTRATION
+# ==============================================================================
+header "EXECUTION PHASE"
+
+step "[1/2] Building and testing all services"
+docker-compose build || fail "Build or Quality Checks failed. See logs above."
+ok "All quality gates passed (Linting & Tests successful)"
+ok "Production images generated"
+
+step "[2/2] Starting application containers"
+docker-compose up -d
+ok "Services are starting up"
+
+# ==============================================================================
+# 2. COMPLETION SUMMARY
+# ==============================================================================
+header "BUILD SUCCESSFUL"
+echo -e "${GREEN}The Family Dashboard is now online!${NC}"
+echo ""
+echo -e "  Local Access Points:"
+echo -e "  --------------------------------------------------"
+echo -e "  Frontend UI:  ${CYAN}http://localhost:8401${NC}"
+echo -e "  Backend API:  ${CYAN}http://localhost:8400${NC}"
+echo -e "  API Docs:     ${CYAN}http://localhost:8400/docs${NC}"
+echo -e "  --------------------------------------------------"
+echo ""
+info "To view logs:   docker-compose logs -f"
+info "To stop:        docker-compose down"
+echo ""

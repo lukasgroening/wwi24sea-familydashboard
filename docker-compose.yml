@@ -14,10 +14,11 @@ services:
   frontend:
     build:
       context: ./frontend
+      target: final
+      args:
+        - VITE_API_URL=http://localhost:8400
     container_name: family_frontend
     ports:
-      - "8401:5173"
-    environment:
-      - VITE_API_URL=http://localhost:8400
+      - "8401:80"
     depends_on:
       - backend
