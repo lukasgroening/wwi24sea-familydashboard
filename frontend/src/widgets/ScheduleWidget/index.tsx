@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type { WidgetProps } from '../../types'
 
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr']
 
@@ -36,7 +35,7 @@ const mockSchedule: Record<string, { time: string; subject: string; room: string
 const todayIndex = Math.min(new Date().getDay() - 1, 4)
 const todayKey = DAYS[todayIndex >= 0 ? todayIndex : 0]
 
-export default function ScheduleWidget(_props: WidgetProps) {
+export default function ScheduleWidget() {
   const [activeDay, setActiveDay] = useState(todayKey)
   const lessons = mockSchedule[activeDay] ?? []
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { AxiosError } from 'axios'
 import api from '../lib/api'
 import type { User, Role } from '../types'
 
@@ -54,7 +55,7 @@ export default function AdminPage() {
       setForm({ username: '', password: '', role: 'Nutzer' })
       setFormError('')
     },
-    onError: (err: any) => {
+    onError: (err: AxiosError<{ detail?: string }>) => {
       setFormError(err.response?.data?.detail ?? 'Fehler beim Erstellen.')
     },
   })
@@ -67,7 +68,7 @@ export default function AdminPage() {
       setEditUser(null)
       setFormError('')
     },
-    onError: (err: any) => {
+    onError: (err: AxiosError<{ detail?: string }>) => {
       setFormError(err.response?.data?.detail ?? 'Fehler beim Aktualisieren.')
     },
   })
@@ -79,7 +80,7 @@ export default function AdminPage() {
       setDeleteConfirm(null)
       setDeleteError('')
     },
-    onError: (err: any) => {
+    onError: (err: AxiosError<{ detail?: string }>) => {
       setDeleteError(err.response?.data?.detail ?? 'Fehler beim Löschen.')
       setDeleteConfirm(null)
     },
