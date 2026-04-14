@@ -51,6 +51,7 @@ export default function CalendarWidget() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [form, setForm] = useState<NewEventForm>(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
@@ -135,8 +136,34 @@ export default function CalendarWidget() {
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
     .slice(0, 5)
 
-  const prev = () => setView((v) => v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 })
-  const next = () => setView((v) => v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 })
+  /* ── Events for selected day ── */
+  const selectedDayEvents = selectedDay
+    ? events.filter((e) => {
+        const d = new Date(e.start_time)
+        return d.getFullYear() === view.year && d.getMonth() === view.month && d.getDate() === selectedDay
+      }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    : []
+
+  /* ── Click on a day ── */
+  const handleDayClick = (day: number, current: boolean) => {
+    if (!current) return
+    if (selectedDay === day) {
+      setSelectedDay(null) // toggle off
+    } else {
+      setSelectedDay(day)
+    }
+  }
+
+  /* ── Click "+" on selected day → open add form with date pre-filled ── */
+  const handleAddForDay = () => {
+    if (!selectedDay) return
+    const dateStr = `${view.year}-${String(view.month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`
+    setForm({ ...EMPTY_FORM, date: dateStr })
+    setShowAddForm(true)
+  }
+
+  const prev = () => { setView((v) => v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 }); setSelectedDay(null) }
+  const next = () => { setView((v) => v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 }); setSelectedDay(null) }
 
   const isToday = (day: number, current: boolean) =>
     current && day === today.getDate() && view.month === today.getMonth() && view.year === today.getFullYear()
@@ -276,14 +303,18 @@ export default function CalendarWidget() {
         {cells.map((cell, i) => {
           const today_ = isToday(cell.day, cell.current)
           const hasEvent = cell.current && eventDates.has(cell.day)
+          const isSelected = cell.current && selectedDay === cell.day
           return (
             <div
               key={i}
-              className="text-center py-1.5 rounded-lg text-xs cursor-pointer transition-colors"
+              onClick={() => handleDayClick(cell.day, cell.current)}
+              className="text-center py-1.5 rounded-lg text-xs cursor-pointer transition-colors hover:bg-gray-100"
               style={{
-                background: today_ ? '#7c9a7e' : 'transparent',
+                background: today_ ? '#7c9a7e' : isSelected ? '#e8f0e8' : 'transparent',
                 color: today_ ? 'white' : cell.current ? '#4a4a44' : '#c8c8c0',
-                fontWeight: today_ ? 500 : 400,
+                fontWeight: today_ || isSelected ? 500 : 400,
+                outline: isSelected && !today_ ? '2px solid #7c9a7e' : 'none',
+                outlineOffset: '-2px',
               }}
             >
               {cell.day}
@@ -295,47 +326,108 @@ export default function CalendarWidget() {
         })}
       </div>
 
-      {/* Upcoming events */}
+      {/* Selected day events OR Upcoming events */}
       <div className="border-t pt-3 flex flex-col gap-2 overflow-y-auto" style={{ borderColor: '#f0f0ea' }}>
-        <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#b5b5a8' }}>
-          Nächste Termine
-        </div>
-        {upcomingEvents.length === 0 ? (
-          <p className="text-xs py-2" style={{ color: '#b5b5a8' }}>Keine anstehenden Termine</p>
-        ) : (
-          upcomingEvents.map((ev) => {
-            const startDate = new Date(ev.start_time)
-            const startTimeStr = startDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-            return (
-              <div key={`${ev.id ?? ev.title}-${ev.start_time}`} className="flex items-center gap-2.5 group">
-                <div className="w-0.5 h-8 rounded-full flex-shrink-0" style={{ background: ev.color ?? '#7c9a7e' }} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium flex items-center gap-1">
-                    {ev.title}
-                    {ev.is_external && (
-                      <span className="text-xs px-1 py-0.5 rounded" style={{ background: '#f4f4f0', color: '#9e9e96', fontSize: '10px' }}>
-                        {ev.source_name ?? 'extern'}
-                      </span>
+        {selectedDay ? (
+          <>
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#b5b5a8' }}>
+                {selectedDay}. {MONTHS[view.month]}
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={handleAddForDay}
+                  className="text-xs px-2 py-0.5 rounded-lg"
+                  style={{ background: '#7c9a7e', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  title="Termin für diesen Tag erstellen"
+                >
+                  + Termin
+                </button>
+                <button
+                  onClick={() => setSelectedDay(null)}
+                  className="text-xs px-2 py-0.5 rounded-lg"
+                  style={{ background: '#f4f4f0', color: '#7a7a72', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            {selectedDayEvents.length === 0 ? (
+              <p className="text-xs py-2" style={{ color: '#b5b5a8' }}>Keine Termine an diesem Tag</p>
+            ) : (
+              selectedDayEvents.map((ev) => {
+                const startDate = new Date(ev.start_time)
+                const endDate = new Date(ev.end_time)
+                const startTimeStr = startDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+                const endTimeStr = endDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+                return (
+                  <div key={`${ev.id ?? ev.title}-${ev.start_time}`} className="flex items-center gap-2.5 group">
+                    <div className="w-0.5 h-8 rounded-full flex-shrink-0" style={{ background: ev.color ?? '#7c9a7e' }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium">{ev.title}</div>
+                      <div className="text-xs" style={{ color: '#9e9e96' }}>
+                        {startTimeStr} – {endTimeStr}
+                        {ev.location && ` · ${ev.location}`}
+                      </div>
+                    </div>
+                    {!ev.is_external && ev.id && (
+                      <button
+                        onClick={() => handleDelete(ev.id!)}
+                        className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ color: '#b5b5a8', background: 'none', border: 'none', cursor: 'pointer' }}
+                        title="Termin löschen"
+                      >
+                        ✕
+                      </button>
                     )}
                   </div>
-                  <div className="text-xs" style={{ color: '#9e9e96' }}>
-                    {startDate.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })} · {startTimeStr}
-                    {ev.location && ` · ${ev.location}`}
+                )
+              })
+            )}
+          </>
+        ) : (
+          <>
+            <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#b5b5a8' }}>
+              Nächste Termine
+            </div>
+            {upcomingEvents.length === 0 ? (
+              <p className="text-xs py-2" style={{ color: '#b5b5a8' }}>Keine anstehenden Termine</p>
+            ) : (
+                  upcomingEvents.map((ev) => {
+                const startDate = new Date(ev.start_time)
+                const startTimeStr = startDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+                return (
+                  <div key={`${ev.id ?? ev.title}-${ev.start_time}`} className="flex items-center gap-2.5 group">
+                    <div className="w-0.5 h-8 rounded-full flex-shrink-0" style={{ background: ev.color ?? '#7c9a7e' }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium flex items-center gap-1">
+                        {ev.title}
+                        {ev.is_external && (
+                          <span className="text-xs px-1 py-0.5 rounded" style={{ background: '#f4f4f0', color: '#9e9e96', fontSize: '10px' }}>
+                            {ev.source_name ?? 'extern'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs" style={{ color: '#9e9e96' }}>
+                        {startDate.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })} · {startTimeStr}
+                        {ev.location && ` · ${ev.location}`}
+                      </div>
+                    </div>
+                    {!ev.is_external && ev.id && (
+                      <button
+                        onClick={() => handleDelete(ev.id!)}
+                        className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ color: '#b5b5a8', background: 'none', border: 'none', cursor: 'pointer' }}
+                        title="Termin löschen"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
-                </div>
-                {!ev.is_external && ev.id && (
-                  <button
-                    onClick={() => handleDelete(ev.id!)}
-                    className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ color: '#b5b5a8', background: 'none', border: 'none', cursor: 'pointer' }}
-                    title="Termin löschen"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            )
-          })
+                )
+              })
+            )}
+          </>
         )}
       </div>
     </div>
