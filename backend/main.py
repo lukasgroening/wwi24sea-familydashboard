@@ -4,8 +4,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Session, select
 from auth import get_password_hash
-from routers import auth_router, users, notes, todos, weather, schedules, dashboard, calendars
+from routers import auth_router, users, notes, todos, weather, schedules, dashboard, calendars, families
 from models.user import Role, User
+from models.family import Family
 from database import engine
 
 from models import note, schedule, calendar  # noqa: F401
@@ -15,18 +16,41 @@ from models.calendar import CalendarEvent, CalendarSource
 
 def create_seed_data():
     with Session(engine) as session:
-        # 1. User Seed
+        # 1. Familien Seed
+        existing_family = session.exec(select(Family)).first()
+        if not existing_family:
+            print("Erstelle Demo-Familie...")
+            demo_family = Family(name="Familie Demo")
+            session.add(demo_family)
+            session.commit()
+            session.refresh(demo_family)
+            print(f"Demo-Familie angelegt (id={demo_family.id})")
+        else:
+            demo_family = existing_family
+
+        # 2. User Seed
         existing_user = session.exec(select(User)).first()
         if not existing_user:
-            print("Erstelle Dummy-Admin User...")
+            print("Erstelle System-Admin und Demo-Admin User...")
+
+            # System-Administrator (kein family_id — verwaltet alles)
+            system_admin = User(
+                username="system_admin",
+                hashed_password=get_password_hash("system123"),
+                role=Role.SYSTEM_ADMIN,
+            )
+            session.add(system_admin)
+
+            # Familien-Administrator für Demo-Familie
             dummy_admin = User(
                 username="Mama_Admin",
                 hashed_password=get_password_hash("geheim123123"),
                 role=Role.FAMILY_ADMIN,
+                family_id=demo_family.id,
             )
             session.add(dummy_admin)
             session.commit()
-            print("Dummy-Admin erfolgreich angelegt!")
+            print("System-Admin (system_admin / system123) und Mama_Admin angelegt!")
 
         # 2. Notes Seed
         existing_note = session.exec(select(Note)).first()
@@ -111,6 +135,7 @@ app.include_router(weather.router)
 app.include_router(schedules.router)
 app.include_router(calendars.router)
 app.include_router(dashboard.router)
+app.include_router(families.router)
 
 
 @app.get("/api/health")

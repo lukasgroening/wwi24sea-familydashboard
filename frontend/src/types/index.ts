@@ -4,6 +4,13 @@ export interface User {
   id: number
   username: string
   role: Role
+  family_id?: number | null
+}
+
+export interface Family {
+  id: number
+  name: string
+  member_count: number
 }
 
 export interface WidgetConfig {

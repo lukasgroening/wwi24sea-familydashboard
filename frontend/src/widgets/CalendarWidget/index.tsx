@@ -1,28 +1,43 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import api from '../../lib/api'
 
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 
-// Mock events — swap with: api.get('/events') once backend is ready
-const mockEvents = [
-  { date: '2026-03-13', title: 'Elternabend', time: '19:00', color: '#7c9a7e' },
-  { date: '2026-03-18', title: 'Zahnarzt Lena', time: '15:00', color: '#a8c4a8' },
-  { date: '2026-03-28', title: 'Geburtstag Oma', time: 'ganztags', color: '#c4a882' },
-]
+interface CalendarEvent {
+  id: number | null
+  title: string
+  description?: string | null
+  start_time: string
+  end_time: string
+  location?: string | null
+  color?: string | null
+  is_external: boolean
+  source_name?: string | null
+}
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate()
 }
 
 function getFirstDayOfMonth(year: number, month: number) {
-  // Monday-based: 0=Mo … 6=So
   return (new Date(year, month, 1).getDay() + 6) % 7
 }
 
 export default function CalendarWidget() {
   const today = new Date()
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() })
+  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    api.get<CalendarEvent[]>('/api/calendar/events')
+      .then((r) => setEvents(r.data))
+      .catch(() => setError('Termine konnten nicht geladen werden.'))
+      .finally(() => setLoading(false))
+  }, [])
 
   const daysInMonth = getDaysInMonth(view.year, view.month)
   const firstDay = getFirstDayOfMonth(view.year, view.month)
@@ -34,13 +49,18 @@ export default function CalendarWidget() {
   while (cells.length % 7 !== 0) cells.push({ day: cells.length - daysInMonth - firstDay + 1, current: false })
 
   const eventDates = new Set(
-    mockEvents
+    events
       .filter((e) => {
-        const d = new Date(e.date)
+        const d = new Date(e.start_time)
         return d.getFullYear() === view.year && d.getMonth() === view.month
       })
-      .map((e) => new Date(e.date).getDate())
+      .map((e) => new Date(e.start_time).getDate())
   )
+
+  const upcomingEvents = [...events]
+    .filter((e) => new Date(e.start_time) >= new Date(today.toDateString()))
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    .slice(0, 3)
 
   const prev = () => setView((v) => v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 })
   const next = () => setView((v) => v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 })
@@ -101,13 +121,25 @@ export default function CalendarWidget() {
         <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#b5b5a8' }}>
           Nächste Termine
         </div>
-        {mockEvents.map((ev) => (
-          <div key={ev.title} className="flex items-center gap-2.5">
-            <div className="w-0.5 h-8 rounded-full flex-shrink-0" style={{ background: ev.color }} />
+        {loading && <p className="text-xs" style={{ color: '#b5b5a8' }}>Lade Termine…</p>}
+        {error && <p className="text-xs" style={{ color: '#b91c1c' }}>{error}</p>}
+        {!loading && !error && upcomingEvents.length === 0 && (
+          <p className="text-xs" style={{ color: '#b5b5a8' }}>Keine bevorstehenden Termine.</p>
+        )}
+        {upcomingEvents.map((ev, i) => (
+          <div key={ev.id ?? i} className="flex items-center gap-2.5">
+            <div className="w-0.5 h-8 rounded-full flex-shrink-0" style={{ background: ev.color ?? '#7c9a7e' }} />
             <div>
               <div className="text-sm font-medium">{ev.title}</div>
               <div className="text-xs" style={{ color: '#9e9e96' }}>
-                {new Date(ev.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })} · {ev.time}
+                {new Date(ev.start_time).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}
+                {' · '}
+                {new Date(ev.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                {ev.is_external && ev.source_name && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded text-xs" style={{ background: '#f4f4f0', color: '#9e9e96' }}>
+                    {ev.source_name}
+                  </span>
+                )}
               </div>
             </div>
           </div>

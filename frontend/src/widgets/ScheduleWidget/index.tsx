@@ -1,43 +1,55 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import api from '../../lib/api'
 
-const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr']
+const DAY_LABELS: Record<string, string> = {
+  Montag: 'Mo',
+  Dienstag: 'Di',
+  Mittwoch: 'Mi',
+  Donnerstag: 'Do',
+  Freitag: 'Fr',
+  Samstag: 'Sa',
+  Sonntag: 'So',
+}
 
-// Mock data — swap with: api.get('/schedule?personId=...') once backend is ready
-const mockSchedule: Record<string, { time: string; subject: string; room: string; color: string }[]> = {
-  Mo: [
-    { time: '08:00 – 08:45', subject: 'Mathematik', room: 'R. 204', color: '#7c9a7e' },
-    { time: '08:50 – 09:35', subject: 'Kunst', room: 'R. 015', color: '#a8c4a8' },
-    { time: '09:55 – 10:40', subject: 'Sachkunde', room: 'R. 112', color: '#c4d4c4' },
-  ],
-  Di: [
-    { time: '08:00 – 08:45', subject: 'Deutsch', room: 'R. 112', color: '#7c9a7e' },
-    { time: '08:50 – 09:35', subject: 'Musik', room: 'Aula', color: '#a8c4a8' },
-    { time: '09:55 – 10:40', subject: 'Mathematik', room: 'R. 204', color: '#c4d4c4' },
-    { time: '10:45 – 11:30', subject: 'Sport', room: 'Turnhalle', color: '#7c9a7e' },
-  ],
-  Mi: [
-    { time: '08:00 – 08:45', subject: 'Englisch', room: 'R. 308', color: '#7c9a7e' },
-    { time: '08:50 – 09:35', subject: 'Deutsch', room: 'R. 112', color: '#a8c4a8' },
-  ],
-  Do: [
-    { time: '08:00 – 08:45', subject: 'Mathematik', room: 'R. 204', color: '#7c9a7e' },
-    { time: '08:50 – 09:35', subject: 'Deutsch', room: 'R. 112', color: '#a8c4a8' },
-    { time: '09:55 – 10:40', subject: 'Englisch', room: 'R. 308', color: '#c4d4c4' },
-    { time: '10:45 – 11:30', subject: 'Sport', room: 'Turnhalle', color: '#7c9a7e' },
-  ],
-  Fr: [
-    { time: '08:00 – 08:45', subject: 'Sachkunde', room: 'R. 112', color: '#7c9a7e' },
-    { time: '08:50 – 09:35', subject: 'Mathematik', room: 'R. 204', color: '#a8c4a8' },
-    { time: '09:55 – 10:40', subject: 'Kunst', room: 'R. 015', color: '#c4d4c4' },
-  ],
+const DAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag']
+
+interface ScheduleEntry {
+  id: number
+  subject: string
+  day_of_week: string
+  start_time: string
+  end_time: string
+  room?: string | null
+  teacher?: string | null
+  user_id?: number | null
 }
 
 const todayIndex = Math.min(new Date().getDay() - 1, 4)
 const todayKey = DAYS[todayIndex >= 0 ? todayIndex : 0]
 
+function formatTime(t: string) {
+  // t is "HH:MM:SS" or "HH:MM"
+  return t.slice(0, 5)
+}
+
 export default function ScheduleWidget() {
   const [activeDay, setActiveDay] = useState(todayKey)
-  const lessons = mockSchedule[activeDay] ?? []
+  const [entries, setEntries] = useState<ScheduleEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    api.get<ScheduleEntry[]>('/api/schedule/')
+      .then((r) => setEntries(r.data))
+      .catch(() => setError('Stundenplan konnte nicht geladen werden.'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const lessons = entries
+    .filter((e) => e.day_of_week === activeDay)
+    .sort((a, b) => a.start_time.localeCompare(b.start_time))
+
+  const COLORS = ['#7c9a7e', '#a8c4a8', '#c4d4c4', '#8fb8a0', '#b5cdb5']
 
   return (
     <div className="flex flex-col gap-3 h-full">
@@ -57,31 +69,41 @@ export default function ScheduleWidget() {
               fontFamily: 'inherit',
             }}
           >
-            {d}
+            {DAY_LABELS[d]}
           </button>
         ))}
       </div>
 
-      {/* Lessons */}
+      {/* Content */}
       <div className="flex flex-col gap-1.5 overflow-y-auto">
-        {lessons.map((lesson, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-            style={{ background: '#f4f9f4', borderLeft: `3px solid ${lesson.color}` }}
-          >
-            <div className="text-xs w-20 flex-shrink-0" style={{ color: '#9e9e96' }}>{lesson.time}</div>
-            <div className="text-sm font-medium flex-1">{lesson.subject}</div>
-            <div className="text-xs px-2 py-0.5 rounded" style={{ background: '#f4f4f0', color: '#9e9e96' }}>
-              {lesson.room}
-            </div>
-          </div>
-        ))}
-        {lessons.length === 0 && (
+        {loading && (
+          <p className="text-sm text-center py-6" style={{ color: '#b5b5a8' }}>Lade Stundenplan…</p>
+        )}
+        {error && (
+          <p className="text-sm text-center py-6" style={{ color: '#b91c1c' }}>{error}</p>
+        )}
+        {!loading && !error && lessons.length === 0 && (
           <div className="text-sm text-center py-6" style={{ color: '#b5b5a8' }}>
             Kein Unterricht
           </div>
         )}
+        {!loading && lessons.map((lesson, i) => (
+          <div
+            key={lesson.id}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+            style={{ background: '#f4f9f4', borderLeft: `3px solid ${COLORS[i % COLORS.length]}` }}
+          >
+            <div className="text-xs w-20 flex-shrink-0" style={{ color: '#9e9e96' }}>
+              {formatTime(lesson.start_time)} – {formatTime(lesson.end_time)}
+            </div>
+            <div className="text-sm font-medium flex-1">{lesson.subject}</div>
+            {lesson.room && (
+              <div className="text-xs px-2 py-0.5 rounded" style={{ background: '#f4f4f0', color: '#9e9e96' }}>
+                {lesson.room}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )

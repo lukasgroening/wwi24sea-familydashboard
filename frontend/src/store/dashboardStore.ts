@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { DashboardWidgetInstance } from '../types'
+import api from '../lib/api'
 
-/** react-grid-layout Layout item */
 interface LayoutItem {
   i: string
   x: number
@@ -21,9 +21,10 @@ interface DashboardState {
   updateLayouts: (layouts: LayoutItem[]) => void
   updateWidgetSettings: (instanceId: string, settings: Record<string, unknown>) => void
   hasWidget: (widgetId: string) => boolean
+  loadFromBackend: () => Promise<void>
+  saveToBackend: () => Promise<void>
 }
 
-/** Default grid positions per widget type */
 const DEFAULT_LAYOUTS: Record<string, { w: number; h: number }> = {
   calendar: { w: 5, h: 4 },
   weather: { w: 3, h: 4 },
@@ -31,7 +32,6 @@ const DEFAULT_LAYOUTS: Record<string, { w: number; h: number }> = {
   schedule: { w: 7, h: 2 },
 }
 
-/** Default settings for the weather widget */
 const DEFAULT_WEATHER_SETTINGS: Record<string, unknown> = {
   locationName: 'Frankfurt am Main',
   locationLat: 50.1155,
@@ -43,7 +43,6 @@ const DEFAULT_WEATHER_SETTINGS: Record<string, unknown> = {
   forecastDays: 7,
 }
 
-/** Default settings for the calendar widget */
 const DEFAULT_CALENDAR_SETTINGS: Record<string, unknown> = {
   defaultView: 'month',
   showWeekends: true,
@@ -71,11 +70,71 @@ const defaultLayouts: LayoutItem[] = [
   { i: 'schedule-default', x: 0, y: 4, w: 7, h: 2 },
 ]
 
+/** Wandelt den Store-State in das Backend-Format um */
+function stateToBackendPayload(
+  widgets: DashboardWidgetInstance[],
+  layouts: LayoutItem[],
+) {
+  return widgets.map((w) => {
+    const layout = layouts.find((l) => l.i === w.instanceId)
+    return {
+      type: w.widgetId,
+      x: layout?.x ?? 0,
+      y: layout?.y ?? 0,
+      w: layout?.w ?? 4,
+      h: layout?.h ?? 2,
+      settings: w.settings,
+    }
+  })
+}
+
+/** Wandelt Backend-Antwort in Store-State um */
+function backendToState(data: Array<{ id: number; type: string; x: number; y: number; w: number; h: number; settings: Record<string, unknown> }>) {
+  const widgets: DashboardWidgetInstance[] = data.map((item) => ({
+    instanceId: `${item.type}-${item.id}`,
+    widgetId: item.type,
+    colSpan: item.w,
+    rowSpan: item.h,
+    settings: item.settings ?? getDefaultSettings(item.type),
+  }))
+  const layouts: LayoutItem[] = data.map((item) => ({
+    i: `${item.type}-${item.id}`,
+    x: item.x,
+    y: item.y,
+    w: item.w,
+    h: item.h,
+  }))
+  return { widgets, layouts }
+}
+
 export const useDashboardStore = create<DashboardState>()(
   persist(
     (set, get) => ({
       widgets: defaultWidgets,
       layouts: defaultLayouts,
+
+      loadFromBackend: async () => {
+        try {
+          const { data } = await api.get('/api/dashboard/widgets')
+          if (data && data.length > 0) {
+            const { widgets, layouts } = backendToState(data)
+            set({ widgets, layouts })
+          }
+          // Falls leer: lokales Default-Layout behalten
+        } catch {
+          // Backend nicht erreichbar: lokales Layout behalten
+        }
+      },
+
+      saveToBackend: async () => {
+        try {
+          const { widgets, layouts } = get()
+          const payload = stateToBackendPayload(widgets, layouts)
+          await api.put('/api/dashboard/widgets', payload)
+        } catch {
+          // Fehler beim Speichern: still ignorieren, localStorage bleibt als Fallback
+        }
+      },
 
       addWidget: (widgetId, settings) => {
         const size = DEFAULT_LAYOUTS[widgetId] ?? { w: 4, h: 2 }
@@ -87,7 +146,6 @@ export const useDashboardStore = create<DashboardState>()(
           rowSpan: size.h,
           settings: settings ?? getDefaultSettings(widgetId),
         }
-        // Place new widget at the bottom (y = Infinity lets react-grid-layout auto-place it)
         const newLayout: LayoutItem = {
           i: instanceId,
           x: 0,
@@ -99,6 +157,7 @@ export const useDashboardStore = create<DashboardState>()(
           widgets: [...state.widgets, instance],
           layouts: [...state.layouts, newLayout],
         }))
+        get().saveToBackend()
       },
 
       removeWidget: (instanceId) => {
@@ -106,10 +165,12 @@ export const useDashboardStore = create<DashboardState>()(
           widgets: state.widgets.filter((w) => w.instanceId !== instanceId),
           layouts: state.layouts.filter((l) => l.i !== instanceId),
         }))
+        get().saveToBackend()
       },
 
       updateLayouts: (layouts) => {
         set({ layouts })
+        get().saveToBackend()
       },
 
       updateWidgetSettings: (instanceId, settings) => {
@@ -118,6 +179,7 @@ export const useDashboardStore = create<DashboardState>()(
             w.instanceId === instanceId ? { ...w, settings: { ...w.settings, ...settings } } : w,
           ),
         }))
+        get().saveToBackend()
       },
 
       hasWidget: (widgetId) => {

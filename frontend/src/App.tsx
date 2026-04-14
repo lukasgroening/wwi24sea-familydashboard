@@ -5,6 +5,9 @@ import AppLayout from './pages/AppLayout'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import AdminPage from './pages/AdminPage'
+import CalendarPage from './pages/CalendarPage'
+import SchedulePage from './pages/SchedulePage'
+import SystemAdminPage from './pages/SystemAdminPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,11 +30,21 @@ export default function App() {
             }
           >
             <Route index element={<DashboardPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/schedule" element={<SchedulePage />} />
             <Route
               path="/admin/members"
               element={
                 <AuthGuard requiredRole="Familien-Administrator">
                   <AdminPage />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/admin/system"
+              element={
+                <AuthGuard requiredRole="System-Administrator">
+                  <SystemAdminPage />
                 </AuthGuard>
               }
             />
