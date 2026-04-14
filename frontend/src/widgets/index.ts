@@ -3,6 +3,7 @@ import WeatherWidget from './WeatherWidget'
 import TodoWidget from './TodoWidget'
 import CalendarWidget from './CalendarWidget'
 import ScheduleWidget from './ScheduleWidget'
+import NotesWidget from './NotesWidget'
 
 /**
  * WIDGET REGISTRY
@@ -42,6 +43,14 @@ export const WIDGETS: WidgetConfig[] = [
     name: 'Stundenplan',
     description: 'Schulplan für Kinder und Au Pairs',
     component: ScheduleWidget,
+    defaultSize: 'medium',
+    requiredRole: 'Nutzer',
+  },
+  {
+    id: 'notes',
+    name: 'Notizen',
+    description: 'Gemeinsame Pinnwand für die Familie',
+    component: NotesWidget,
     defaultSize: 'medium',
     requiredRole: 'Nutzer',
   },

@@ -14,3 +14,8 @@ class Note(SQLModel, table=True):
 class NoteCreate(BaseModel):
     title: str
     content: str
+
+
+class NoteUpdate(BaseModel):
+    title: str | None = None
+    content: str | None = None

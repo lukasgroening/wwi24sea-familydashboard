@@ -43,6 +43,7 @@ const DEFAULT_LAYOUTS: Record<string, { w: number; h: number }> = {
   weather: { w: 3, h: 4 },
   todo: { w: 4, h: 2 },
   schedule: { w: 7, h: 2 },
+  notes: { w: 4, h: 3 },
 }
 
 /** Default settings for the weather widget */
