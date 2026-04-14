@@ -134,6 +134,7 @@ function frontendToBackend(
 
 let syncTimeout: ReturnType<typeof setTimeout> | null = null
 let isLoadingFromBackend = false
+let loadPromise: Promise<void> | null = null
 
 export const useDashboardStore = create<DashboardState>()(
   persist(
@@ -143,24 +144,37 @@ export const useDashboardStore = create<DashboardState>()(
       syncing: false,
 
       loadFromBackend: async () => {
-        isLoadingFromBackend = true
-        try {
-          const { data } = await api.get<BackendWidget[]>('/api/dashboard/widgets')
-          if (data && data.length > 0) {
-            const { widgets, layouts } = backendToFrontend(data)
-            set({ widgets, layouts })
-            console.log('[Dashboard] Layout vom Backend geladen:', data.length, 'Widgets')
-          } else {
-            console.log('[Dashboard] Backend leer → lade lokalen State hoch')
-            const state = get()
-            const payload = frontendToBackend(state.widgets, state.layouts)
-            await api.put('/api/dashboard/widgets', payload)
+        // Prevent duplicate concurrent calls
+        if (loadPromise) return loadPromise
+        
+        loadPromise = (async () => {
+          isLoadingFromBackend = true
+          try {
+            const { data } = await api.get<BackendWidget[]>('/api/dashboard/widgets')
+            if (data && data.length > 0) {
+              const { widgets, layouts } = backendToFrontend(data)
+              set({ widgets, layouts })
+              console.log('[Dashboard] Layout vom Backend geladen:', data.length, 'Widgets')
+            } else {
+              console.log('[Dashboard] Backend leer → lade Default-Widgets hoch')
+              const payload = frontendToBackend(defaultWidgets, defaultLayouts)
+              const { data: saved } = await api.put<BackendWidget[]>('/api/dashboard/widgets', payload)
+              if (saved && saved.length > 0) {
+                const { widgets, layouts } = backendToFrontend(saved)
+                set({ widgets, layouts })
+              }
+            }
+          } catch (err) {
+            console.warn('[Dashboard] Backend nicht erreichbar, verwende lokalen State:', err)
+          } finally {
+            setTimeout(() => { 
+              isLoadingFromBackend = false 
+              loadPromise = null
+            }, 1000)
           }
-        } catch (err) {
-          console.warn('[Dashboard] Backend nicht erreichbar, verwende lokalen State:', err)
-        } finally {
-          setTimeout(() => { isLoadingFromBackend = false }, 1000)
-        }
+        })()
+        
+        return loadPromise
       },
 
       syncToBackend: async () => {
