@@ -1,21 +1,14 @@
 import axios from 'axios'
 import api from './api'
 
-/**
- * Weather API client
- *
- * – Wetterdaten werden vom Backend abgerufen: GET /api/weather?city=...
- *   (das Backend kümmert sich um Geocoding + Open-Meteo Abfrage)
- * – Stadtsuche läuft über Nominatim (OpenStreetMap) für Autocomplete im Frontend
- *
- * ALTERNATIVE API (zur Team-Diskussion):
- *   Meteoblue API – Key liegt in .env (VITE_METEOBLUE_API_KEY)
- *   Docs: https://docs.meteoblue.com/en/weather-apis/packages-api/introduction
- */
+
+//  ALTERNATIVE API:
+//  Meteoblue API – Key liegt in .env (VITE_METEOBLUE_API_KEY)
+//  Docs: https://docs.meteoblue.com/en/weather-apis/packages-api/introduction
+
 
 const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org'
 
-/* ── Types ────────────────────────────────────────── */
 
 export interface GeoLocation {
   name: string
@@ -25,7 +18,6 @@ export interface GeoLocation {
   country: string
 }
 
-/** Matches the backend WeatherPublic model */
 export interface WeatherData {
   city: string
   temperature: number
@@ -33,16 +25,12 @@ export interface WeatherData {
   description: string
 }
 
-/* ── Backend Weather Fetch ────────────────────────── */
-
 export async function fetchWeather(city: string): Promise<WeatherData> {
-  const { data } = await api.get<WeatherData>('/api/weather', {
+  const { data } = await api.get<WeatherData>('/api/weather/', {
     params: { city },
   })
   return data
 }
-
-/* ── Geocoding via Nominatim (OpenStreetMap) ──────── */
 
 export async function searchCities(query: string, limit = 5): Promise<GeoLocation[]> {
   if (!query.trim()) return []

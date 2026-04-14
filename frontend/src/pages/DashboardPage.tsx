@@ -37,11 +37,15 @@ export default function DashboardPage() {
     removeWidget,
     updateLayouts,
     updateWidgetSettings,
+    loadFromBackend,
   } = useDashboardStore()
 
   const [showAddModal, setShowAddModal] = useState(false)
 
-  // Track container width for react-grid-layout
+  useEffect(() => {
+    loadFromBackend()
+  }, [loadFromBackend])
+
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(1200)
 
@@ -57,8 +61,6 @@ export default function DashboardPage() {
     return () => observer.disconnect()
   }, [])
 
-  // Handle layout change from drag/resize
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleLayoutChange = (newLayout: any) => {
     const mapped = (newLayout as Array<{ i: string; x: number; y: number; w: number; h: number }>).map((l) => ({
       i: l.i,
@@ -112,15 +114,12 @@ export default function DashboardPage() {
 
           const isWeather = instance.widgetId === 'weather'
 
-          // Weather widget — special green background + settings + remove
           if (isWeather) {
             return (
               <div key={instance.instanceId} className="rounded-2xl p-5 relative group" style={{ background: '#7c9a7e' }}>
-                {/* Drag handle */}
                 <div className="widget-drag-handle absolute top-2 left-2 right-10 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <div className="w-8 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.4)' }} />
                 </div>
-                {/* Remove button */}
                 <button
                   onClick={() => removeWidget(instance.instanceId)}
                   className="absolute top-2 right-2 w-6 h-6 rounded-lg text-xs flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -129,7 +128,6 @@ export default function DashboardPage() {
                 >
                   ✕
                 </button>
-                {/* Weather widget with settings */}
                 <WeatherWidget
                   settings={instance.settings}
                   onSettingsChange={(newSettings) =>
@@ -140,18 +138,15 @@ export default function DashboardPage() {
             )
           }
 
-          // Other widgets (calendar, todo, schedule) — standard rendering
           return (
             <div
               key={instance.instanceId}
               className="rounded-2xl p-5 relative group"
               style={{ background: '#ffffff', border: '1px solid #e8e8e2' }}
             >
-              {/* Drag handle */}
               <div className="widget-drag-handle absolute top-2 left-2 right-10 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <div className="w-8 h-1 rounded-full" style={{ background: '#d4d4cc' }} />
               </div>
-              {/* Remove button */}
               <button
                 onClick={() => removeWidget(instance.instanceId)}
                 className="absolute top-2 right-2 w-6 h-6 rounded-lg text-xs flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -160,7 +155,6 @@ export default function DashboardPage() {
               >
                 ✕
               </button>
-              {/* Header */}
               <div className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#b5b5a8' }}>
                 {config.name}
               </div>

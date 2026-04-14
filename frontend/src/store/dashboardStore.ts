@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import api from '../lib/api'
 import type { DashboardWidgetInstance } from '../types'
 
-/** react-grid-layout Layout item */
 interface LayoutItem {
   i: string
   x: number
@@ -13,14 +13,28 @@ interface LayoutItem {
   minH?: number
 }
 
+interface BackendWidget {
+  id: number
+  user_id: number
+  type: string
+  x: number
+  y: number
+  w: number
+  h: number
+  settings: Record<string, unknown>
+}
+
 interface DashboardState {
   widgets: DashboardWidgetInstance[]
   layouts: LayoutItem[]
+  syncing: boolean
   addWidget: (widgetId: string, settings?: Record<string, unknown>) => void
   removeWidget: (instanceId: string) => void
   updateLayouts: (layouts: LayoutItem[]) => void
   updateWidgetSettings: (instanceId: string, settings: Record<string, unknown>) => void
   hasWidget: (widgetId: string) => boolean
+  loadFromBackend: () => Promise<void>
+  syncToBackend: () => Promise<void>
 }
 
 /** Default grid positions per widget type */
@@ -71,11 +85,97 @@ const defaultLayouts: LayoutItem[] = [
   { i: 'schedule-default', x: 0, y: 4, w: 7, h: 2 },
 ]
 
+/** Backend - Frontend mapping */
+
+function backendToFrontend(backendWidgets: BackendWidget[]): {
+  widgets: DashboardWidgetInstance[]
+  layouts: LayoutItem[]
+} {
+  const widgets: DashboardWidgetInstance[] = []
+  const layouts: LayoutItem[] = []
+
+  for (const bw of backendWidgets) {
+    const instanceId = `${bw.type}-${bw.id}`
+    widgets.push({
+      instanceId,
+      widgetId: bw.type,
+      colSpan: bw.w,
+      rowSpan: bw.h,
+      settings: bw.settings ?? getDefaultSettings(bw.type),
+    })
+    layouts.push({
+      i: instanceId,
+      x: bw.x,
+      y: bw.y,
+      w: bw.w,
+      h: bw.h,
+    })
+  }
+
+  return { widgets, layouts }
+}
+
+function frontendToBackend(
+  widgets: DashboardWidgetInstance[],
+  layouts: LayoutItem[],
+): Array<{ type: string; x: number; y: number; w: number; h: number; settings: Record<string, unknown> }> {
+  return widgets.map((widget) => {
+    const layout = layouts.find((l) => l.i === widget.instanceId)
+    return {
+      type: widget.widgetId,
+      x: layout?.x ?? 0,
+      y: layout?.y ?? 0,
+      w: layout?.w ?? widget.colSpan,
+      h: layout?.h ?? widget.rowSpan,
+      settings: widget.settings,
+    }
+  })
+}
+
+let syncTimeout: ReturnType<typeof setTimeout> | null = null
+let isLoadingFromBackend = false
+
 export const useDashboardStore = create<DashboardState>()(
   persist(
     (set, get) => ({
       widgets: defaultWidgets,
       layouts: defaultLayouts,
+      syncing: false,
+
+      loadFromBackend: async () => {
+        isLoadingFromBackend = true
+        try {
+          const { data } = await api.get<BackendWidget[]>('/api/dashboard/widgets')
+          if (data && data.length > 0) {
+            const { widgets, layouts } = backendToFrontend(data)
+            set({ widgets, layouts })
+            console.log('[Dashboard] Layout vom Backend geladen:', data.length, 'Widgets')
+          } else {
+            console.log('[Dashboard] Backend leer → lade lokalen State hoch')
+            const state = get()
+            const payload = frontendToBackend(state.widgets, state.layouts)
+            await api.put('/api/dashboard/widgets', payload)
+          }
+        } catch (err) {
+          console.warn('[Dashboard] Backend nicht erreichbar, verwende lokalen State:', err)
+        } finally {
+          setTimeout(() => { isLoadingFromBackend = false }, 1000)
+        }
+      },
+
+      syncToBackend: async () => {
+        if (syncTimeout) clearTimeout(syncTimeout)
+        syncTimeout = setTimeout(async () => {
+          const state = get()
+          const payload = frontendToBackend(state.widgets, state.layouts)
+          try {
+            await api.put('/api/dashboard/widgets', payload)
+            console.log('[Dashboard] Layout ans Backend synchronisiert')
+          } catch (err) {
+            console.warn('[Dashboard] Sync fehlgeschlagen:', err)
+          }
+        }, 800)
+      },
 
       addWidget: (widgetId, settings) => {
         const size = DEFAULT_LAYOUTS[widgetId] ?? { w: 4, h: 2 }
@@ -87,7 +187,6 @@ export const useDashboardStore = create<DashboardState>()(
           rowSpan: size.h,
           settings: settings ?? getDefaultSettings(widgetId),
         }
-        // Place new widget at the bottom (y = Infinity lets react-grid-layout auto-place it)
         const newLayout: LayoutItem = {
           i: instanceId,
           x: 0,
@@ -99,6 +198,7 @@ export const useDashboardStore = create<DashboardState>()(
           widgets: [...state.widgets, instance],
           layouts: [...state.layouts, newLayout],
         }))
+        get().syncToBackend()
       },
 
       removeWidget: (instanceId) => {
@@ -106,10 +206,14 @@ export const useDashboardStore = create<DashboardState>()(
           widgets: state.widgets.filter((w) => w.instanceId !== instanceId),
           layouts: state.layouts.filter((l) => l.i !== instanceId),
         }))
+        get().syncToBackend()
       },
 
       updateLayouts: (layouts) => {
         set({ layouts })
+        if (!isLoadingFromBackend) {
+          get().syncToBackend()
+        }
       },
 
       updateWidgetSettings: (instanceId, settings) => {
@@ -118,6 +222,7 @@ export const useDashboardStore = create<DashboardState>()(
             w.instanceId === instanceId ? { ...w, settings: { ...w.settings, ...settings } } : w,
           ),
         }))
+        get().syncToBackend()
       },
 
       hasWidget: (widgetId) => {
