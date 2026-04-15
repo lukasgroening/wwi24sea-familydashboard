@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
@@ -28,16 +30,14 @@ function getFirstDayOfMonth(year: number, month: number) {
 export default function CalendarWidget() {
   const today = new Date()
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() })
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
 
-  useEffect(() => {
-    api.get<CalendarEvent[]>('/api/calendar/events')
-      .then((r) => setEvents(r.data))
-      .catch(() => setError('Termine konnten nicht geladen werden.'))
-      .finally(() => setLoading(false))
-  }, [])
+  // React Query — gleicher Key wie CalendarPage, bleibt automatisch synchron
+  const { data: events = [], isLoading, error } = useQuery<CalendarEvent[]>({
+    queryKey: ['calendar-events'],
+    queryFn: () => api.get('/api/calendar/events').then((r) => r.data),
+    staleTime: 30_000,
+  })
 
   const daysInMonth = getDaysInMonth(view.year, view.month)
   const firstDay = getFirstDayOfMonth(view.year, view.month)
@@ -118,12 +118,21 @@ export default function CalendarWidget() {
 
       {/* Upcoming events */}
       <div className="border-t pt-3 flex flex-col gap-2" style={{ borderColor: '#f0f0ea' }}>
-        <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#b5b5a8' }}>
-          Nächste Termine
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#b5b5a8' }}>
+            Nächste Termine
+          </div>
+          <button
+            onClick={() => navigate('/calendar')}
+            className="text-xs px-2 py-1 rounded-lg transition-colors"
+            style={{ background: '#f4f4f0', color: '#7a7a72', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            Alle anzeigen →
+          </button>
         </div>
-        {loading && <p className="text-xs" style={{ color: '#b5b5a8' }}>Lade Termine…</p>}
-        {error && <p className="text-xs" style={{ color: '#b91c1c' }}>{error}</p>}
-        {!loading && !error && upcomingEvents.length === 0 && (
+        {isLoading && <p className="text-xs" style={{ color: '#b5b5a8' }}>Lade Termine…</p>}
+        {error && <p className="text-xs" style={{ color: '#b91c1c' }}>Termine konnten nicht geladen werden.</p>}
+        {!isLoading && !error && upcomingEvents.length === 0 && (
           <p className="text-xs" style={{ color: '#b5b5a8' }}>Keine bevorstehenden Termine.</p>
         )}
         {upcomingEvents.map((ev, i) => (
@@ -135,11 +144,6 @@ export default function CalendarWidget() {
                 {new Date(ev.start_time).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}
                 {' · '}
                 {new Date(ev.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                {ev.is_external && ev.source_name && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded text-xs" style={{ background: '#f4f4f0', color: '#9e9e96' }}>
-                    {ev.source_name}
-                  </span>
-                )}
               </div>
             </div>
           </div>

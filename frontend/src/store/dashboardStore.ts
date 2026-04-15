@@ -118,9 +118,12 @@ export const useDashboardStore = create<DashboardState>()(
           const { data } = await api.get('/api/dashboard/widgets')
           if (data && data.length > 0) {
             const { widgets, layouts } = backendToState(data)
+            // Explizit ersetzen — kein Merge mit altem localStorage-State
             set({ widgets, layouts })
+          } else {
+            // Backend leer → Defaults ins Backend speichern damit künftige Loads konsistent sind
+            await get().saveToBackend()
           }
-          // Falls leer: lokales Default-Layout behalten
         } catch {
           // Backend nicht erreichbar: lokales Layout behalten
         }
@@ -170,7 +173,8 @@ export const useDashboardStore = create<DashboardState>()(
 
       updateLayouts: (layouts) => {
         set({ layouts })
-        get().saveToBackend()
+        // Kein saveToBackend hier — wird zu oft gefeuert (jeder Drag/Resize)
+        // Layout wird nur gespeichert wenn explizit Widgets hinzugefügt/entfernt werden
       },
 
       updateWidgetSettings: (instanceId, settings) => {
