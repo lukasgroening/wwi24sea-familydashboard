@@ -1,6 +1,6 @@
 services:
   backend:
-    build: 
+    build:
       context: ./backend
     container_name: family_backend
     ports:
@@ -8,7 +8,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - CORS_ORIGINS=http://localhost:8401
+      - CORS_ORIGINS=http://${HOST:-localhost}:8401
     command: uvicorn main:app --host 0.0.0.0 --port 8000
 
   frontend:
@@ -16,7 +16,7 @@ services:
       context: ./frontend
       target: final
       args:
-        - VITE_API_URL=http://localhost:8400
+        - VITE_API_URL=http://${HOST:-localhost}:8400
     container_name: family_frontend
     ports:
       - "8401:80"
