@@ -8,12 +8,16 @@ interface SidebarProps {
 
 const navItems = [
   { label: 'Dashboard', to: '/', icon: '⊞' },
-  { label: 'Kalender', to: '/calendar', icon: '◻' },
-  { label: 'Stundenplan', to: '/schedule', icon: '◻' },
+  { label: 'Kalender', to: '/calendar', icon: '▦' },
+  { label: 'Stundenplan', to: '/schedule', icon: '≡' },
 ]
 
 const adminItems = [
-  { label: 'Mitglieder', to: '/admin/members', icon: '◻' },
+  { label: 'Mitglieder', to: '/admin/members', icon: '👥' },
+]
+
+const systemAdminItems = [
+  { label: 'System', to: '/admin/system', icon: '⚙' },
 ]
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -26,6 +30,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }
 
   const isAdmin = user?.role === 'Familien-Administrator' || user?.role === 'System-Administrator'
+  const isSystemAdmin = user?.role === 'System-Administrator'
 
   return (
     <aside
@@ -79,6 +84,24 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               Verwaltung
             </div>
             {adminItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${isActive ? 'font-medium' : ''}`
+                }
+                style={({ isActive }) => ({
+                  background: isActive ? '#ffffff' : 'transparent',
+                  color: isActive ? '#2d2d2d' : '#7a7a72',
+                  boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                })}
+              >
+                <span className="text-sm">{item.icon}</span>
+                {item.label}
+              </NavLink>
+            ))}
+            {isSystemAdmin && systemAdminItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

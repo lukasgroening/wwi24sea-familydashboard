@@ -107,8 +107,9 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <div className="mt-4 p-3 rounded-xl text-xs" style={{ background: '#f0f5f0', color: '#7c9a7e' }}>
-          <strong>Demo:</strong> Mama_Admin / geheim123123
+        <div className="mt-4 p-3 rounded-xl text-xs flex flex-col gap-1" style={{ background: '#f0f5f0', color: '#7c9a7e' }}>
+          <div><strong>Demo:</strong> Mama_Admin / geheim123123</div>
+          <div><strong>System-Admin:</strong> system_admin / system123</div>
         </div>
       </div>
     </div>

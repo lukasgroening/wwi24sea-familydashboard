@@ -10,7 +10,7 @@ import ScheduleWidget from './ScheduleWidget'
  * Um ein neues Widget hinzuzufügen:
  * 1. Neuen Ordner unter src/widgets/MeinWidget/ erstellen
  * 2. index.tsx mit einer React-Komponente erstellen (siehe WidgetProps in types/index.ts)
- * 3. Widget hier unten in die Liste eintragen — fertig!
+ * 3. Widget hier unten in die Liste eintragen.
  */
 export const WIDGETS: WidgetConfig[] = [
   {

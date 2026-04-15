@@ -37,9 +37,16 @@ export default function DashboardPage() {
     removeWidget,
     updateLayouts,
     updateWidgetSettings,
+    loadFromBackend,
   } = useDashboardStore()
 
   const [showAddModal, setShowAddModal] = useState(false)
+
+  // Beim ersten Laden: Layout vom Backend holen
+  useEffect(() => {
+    loadFromBackend()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Track container width for react-grid-layout
   const containerRef = useRef<HTMLDivElement>(null)

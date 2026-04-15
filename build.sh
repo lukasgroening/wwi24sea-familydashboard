@@ -54,12 +54,12 @@ info "Final images will be stripped of all testing tools and source maps."
 header "EXECUTION PHASE"
 
 step "[1/2] Building and testing all services"
-docker-compose build || fail "Build or Quality Checks failed. See logs above."
+docker compose build || fail "Build or Quality Checks failed. See logs above."
 ok "All quality gates passed (Linting & Tests successful)"
 ok "Production images generated"
 
 step "[2/2] Starting application containers"
-docker-compose up -d
+docker compose up -d
 ok "Services are starting up"
 
 # ==============================================================================
@@ -75,6 +75,6 @@ echo -e "  Backend API:  ${CYAN}http://localhost:8400${NC}"
 echo -e "  API Docs:     ${CYAN}http://localhost:8400/docs${NC}"
 echo -e "  --------------------------------------------------"
 echo ""
-info "To view logs:   docker-compose logs -f"
-info "To stop:        docker-compose down"
+info "To view logs:   docker compose logs -f"
+info "To stop:        docker compose down"
 echo ""
