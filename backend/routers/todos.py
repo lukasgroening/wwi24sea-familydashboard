@@ -1,101 +1,52 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
-
-from database import get_session
-from models.todo import ToDo, ToDoCreate, ToDoPublic, ToDoUpdate
-from models.user import User
+from fastapi import APIRouter, Depends, status
+from sqlmodel import Session
 from dependencies import get_current_user
+from database import get_session
+from models.todo import ToDoCreate, ToDoPublic, ToDoUpdate
+from models.user import User
+from services import todo_service
 
 router = APIRouter(
-    prefix="/api/todos", tags=["To-Dos"], dependencies=[Depends(get_current_user)]
+    prefix="/api/todos",
+    tags=["To-Dos"],
+    dependencies=[Depends(get_current_user)],
 )
 
 
 @router.post("/", response_model=ToDoPublic)
 def create_todo(
-    todo_in: ToDoCreate, 
+    todo_in: ToDoCreate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    # Prüfen, ob der zugewiesene Benutzer in der gleichen Familie ist (falls angegeben)
-    if todo_in.user_id is not None:
-        user = session.get(User, todo_in.user_id)
-        if not user or user.family_id != current_user.family_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, 
-                detail="Zugewiesener Benutzer nicht gefunden oder gehört nicht zur Familie."
-            )
-
-    db_todo = ToDo(
-        **todo_in.model_dump(),
-        family_id=current_user.family_id
-    )
-
-    session.add(db_todo)
-    session.commit()
-    session.refresh(db_todo)
-    return db_todo
+    return todo_service.create_todo(session, todo_in, current_user.family_id)
 
 
 @router.get("/", response_model=list[ToDoPublic])
-def get_todos(
+def read_todos(
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    # Nur To-Dos der eigenen Familie abrufen
-    todos = session.exec(
-        select(ToDo).where(ToDo.family_id == current_user.family_id)
-    ).all()
-    return todos
+    return todo_service.get_family_todos(session, current_user.family_id)
 
 
 @router.patch("/{todo_id}", response_model=ToDoPublic)
 def update_todo(
-    todo_id: int, 
-    todo_update: ToDoUpdate, 
+    todo_id: int,
+    todo_update: ToDoUpdate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    db_todo = session.get(ToDo, todo_id)
-    # Nur To-Dos der eigenen Familie bearbeiten
-    if not db_todo or db_todo.family_id != current_user.family_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="To-Do nicht gefunden."
-        )
-
-    if todo_update.user_id is not None:
-        user = session.get(User, todo_update.user_id)
-        if not user or user.family_id != current_user.family_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, 
-                detail="Zugewiesener Benutzer nicht gefunden oder gehört nicht zur Familie."
-            )
-
-    update_data = todo_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_todo, key, value)
-
-    session.add(db_todo)
-    session.commit()
-    session.refresh(db_todo)
-    return db_todo
+    return todo_service.update_todo(
+        session, todo_id, todo_update, current_user.family_id
+    )
 
 
 @router.delete("/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_todo(
-    todo_id: int, 
+    todo_id: int,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    db_todo = session.get(ToDo, todo_id)
-    # Nur To-Dos der eigenen Familie löschen
-    if not db_todo or db_todo.family_id != current_user.family_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="To-Do nicht gefunden."
-        )
-
-    session.delete(db_todo)
-    session.commit()
+    todo_service.delete_todo(session, todo_id, current_user.family_id)
     return None

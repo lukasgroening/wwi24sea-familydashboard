@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from fastapi import APIRouter, Depends, status
+from sqlmodel import Session
 from typing import Optional
 
 from database import get_session
-from models.user import Role, User, UserCreate, UserPublic, UserUpdate
-from auth import get_password_hash
+from models.user import User, UserCreate, UserPublic, UserUpdate
 from dependencies import require_admin
+from services import user_service
 
 router = APIRouter(
     prefix="/api/users",
@@ -16,7 +16,7 @@ router = APIRouter(
 @router.get("/roles", response_model=list[str])
 def get_available_roles(_: User = Depends(require_admin)):
     """Gibt alle verfügbaren Benutzerrollen als einfache Liste zurück."""
-    return [role.value for role in Role]
+    return user_service.get_available_roles()
 
 
 @router.get("/", response_model=list[UserPublic])
@@ -25,21 +25,7 @@ def get_all_users(
     current_user: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
-    """
-    System-Admin: sieht alle User (optional nach family_id gefiltert).
-    Familien-Admin: sieht nur User aus seiner eigenen Familie.
-    """
-    if current_user.role == Role.SYSTEM_ADMIN:
-        if family_id is not None:
-            users = session.exec(select(User).where(User.family_id == family_id)).all()
-        else:
-            users = session.exec(select(User)).all()
-    else:
-        # Familien-Admin sieht nur seine Familie
-        users = session.exec(
-            select(User).where(User.family_id == current_user.family_id)
-        ).all()
-    return users
+    return user_service.get_all_users(session, current_user, family_id)
 
 
 @router.post("/", response_model=UserPublic)
@@ -48,47 +34,7 @@ def create_user(
     current_user: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
-    existing_user = session.exec(
-        select(User).where(User.username == user_in.username)
-    ).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=400, detail="Benutzername ist bereits vergeben."
-        )
-
-    # Familien-Admin kann nur User in seiner eigenen Familie anlegen
-    family_id = user_in.family_id
-    if current_user.role == Role.FAMILY_ADMIN:
-        family_id = current_user.family_id
-
-    hashed_password = get_password_hash(user_in.password)
-    new_user = User(
-        username=user_in.username,
-        hashed_password=hashed_password,
-        role=user_in.role,
-        family_id=family_id,
-    )
-
-    session.add(new_user)
-    session.commit()
-    session.refresh(new_user)
-
-    return new_user
-
-
-def _check_last_admin(session: Session, user: User, action: str):
-    """Prüft, ob versucht wird, den letzten Administrator zu löschen oder zu degradieren."""
-    if user.role in [Role.FAMILY_ADMIN, Role.SYSTEM_ADMIN]:
-        admins = session.exec(
-            select(User).where(
-                (User.role == Role.FAMILY_ADMIN) | (User.role == Role.SYSTEM_ADMIN)
-            )
-        ).all()
-        if len(admins) <= 1:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Aktion abgelehnt: Der letzte Administrator kann nicht {action} werden.",
-            )
+    return user_service.create_user(session, user_in, current_user)
 
 
 @router.patch("/{user_id}", response_model=UserPublic)
@@ -98,44 +44,7 @@ def update_user(
     current_user: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Benutzer nicht gefunden."
-        )
-
-    # Familien-Admin darf nur User aus seiner Familie bearbeiten
-    if current_user.role == Role.FAMILY_ADMIN and user.family_id != current_user.family_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Zugriff verweigert. Dieser Benutzer gehört nicht zu deiner Familie.",
-        )
-
-    if user_update.role is not None and user_update.role == Role.USER:
-        _check_last_admin(session, user, "zu einem normalen Nutzer degradiert")
-
-    if user_update.username is not None and user_update.username != user.username:
-        existing_user = session.exec(
-            select(User).where(User.username == user_update.username)
-        ).first()
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Benutzername ist bereits vergeben.",
-            )
-
-    update_data = user_update.model_dump(exclude_unset=True)
-
-    if "password" in update_data:
-        update_data["hashed_password"] = get_password_hash(update_data.pop("password"))
-
-    for key, value in update_data.items():
-        setattr(user, key, value)
-
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-    return user
+    return user_service.update_user(session, user_id, user_update, current_user)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -144,27 +53,5 @@ def delete_user(
     current_user: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Benutzer nicht gefunden."
-        )
-
-    if user.id == current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Du kannst deinen eigenen Account nicht löschen.",
-        )
-
-    # Familien-Admin darf nur User aus seiner Familie löschen
-    if current_user.role == Role.FAMILY_ADMIN and user.family_id != current_user.family_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Zugriff verweigert. Dieser Benutzer gehört nicht zu deiner Familie.",
-        )
-
-    _check_last_admin(session, user, "gelöscht")
-
-    session.delete(user)
-    session.commit()
+    user_service.delete_user(session, user_id, current_user)
     return None
