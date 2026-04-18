@@ -1,16 +1,22 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, forwardRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { X, Cloud, Calendar, CheckSquare, LayoutList, Plus, LogOut } from 'lucide-react'
 import { ReactGridLayout } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
+import 'react-resizable/css/styles.css'
 import { WIDGETS } from '../widgets'
 import { useAuthStore } from '../store/authStore'
 import { useDashboardStore } from '../store/dashboardStore'
 import type { Role } from '../types'
 import WeatherWidget from '../widgets/WeatherWidget'
 
+function isAdminRole(role: Role | undefined): boolean {
+  return role === 'Familien-Administrator' || role === 'System-Administrator'
+}
+
 function canSeeWidget(widgetRole: Role | undefined, userRole: Role | undefined): boolean {
   if (!widgetRole) return true
-  if (userRole === 'System-Administrator') return true
-  if (userRole === 'Familien-Administrator') return true
+  if (isAdminRole(userRole)) return true
   return widgetRole === 'Nutzer'
 }
 
@@ -28,8 +34,53 @@ const todayStr = new Date().toLocaleDateString('de-DE', {
   year: 'numeric',
 })
 
+interface WidgetShellProps extends React.HTMLAttributes<HTMLDivElement> {
+  onRemove: () => void
+  variant: 'weather' | 'default'
+  children: React.ReactNode
+  title?: string
+}
+
+const WidgetShell = forwardRef<HTMLDivElement, WidgetShellProps>(
+  ({ onRemove, variant, children, title, className = '', style, ...rest }, ref) => {
+  const isWeather = variant === 'weather'
+  const baseStyle: React.CSSProperties = isWeather
+    ? { background: 'var(--color-sage-500)' }
+    : { background: 'white', border: '1px solid var(--color-stone-border)' }
+  return (
+    <div
+      ref={ref}
+      className={`rounded-2xl p-5 relative group h-full overflow-hidden ${className}`}
+      style={{ ...baseStyle, ...style }}
+      {...rest}
+    >
+      <div className="widget-drag-handle absolute top-2 left-2 right-10 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <div className="w-8 h-1 rounded-full" style={{ background: isWeather ? 'oklch(1 0 0 / 0.4)' : 'var(--color-stone-400)' }} />
+      </div>
+      <button
+        onClick={onRemove}
+        className="absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+        style={isWeather
+          ? { background: 'oklch(1 0 0 / 0.15)', border: 'none', cursor: 'pointer', color: 'oklch(1 0 0 / 0.8)' }
+          : { background: 'var(--color-danger-50)', border: 'none', cursor: 'pointer', color: 'var(--color-danger-500)' }
+        }
+        title="Widget entfernen"
+      >
+        <X size={12} />
+      </button>
+      {title && (
+        <div className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--color-stone-500)' }}>
+          {title}
+        </div>
+      )}
+      {children}
+    </div>
+  )
+})
+
 export default function DashboardPage() {
-  const { user } = useAuthStore()
+  const navigate = useNavigate()
+  const { user, logout } = useAuthStore()
   const {
     widgets: dashboardWidgets,
     layouts,
@@ -38,17 +89,16 @@ export default function DashboardPage() {
     updateLayouts,
     updateWidgetSettings,
     loadFromBackend,
+    saveToBackend,
   } = useDashboardStore()
 
   const [showAddModal, setShowAddModal] = useState(false)
 
-  // Beim ersten Laden: Layout vom Backend holen
   useEffect(() => {
     loadFromBackend()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Track container width for react-grid-layout
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(1200)
 
@@ -64,7 +114,11 @@ export default function DashboardPage() {
     return () => observer.disconnect()
   }, [])
 
-  // Handle layout change from drag/resize
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleLayoutChange = (newLayout: any) => {
     const mapped = (newLayout as Array<{ i: string; x: number; y: number; w: number; h: number }>).map((l) => ({
@@ -80,22 +134,29 @@ export default function DashboardPage() {
   return (
     <div className="flex-1 p-8 overflow-y-auto" ref={containerRef}>
       {/* Topbar */}
-      <div className="flex items-start justify-between mb-7">
+      <div className="flex items-center justify-between mb-7">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: '#1a1a1a' }}>
-            {getGreeting()}{user?.username ? `, ${user.username}` : ''} 👋
+          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--color-stone-900)' }}>
+            {getGreeting()}{user?.username ? `, ${user.username}` : ''}
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#9e9e96' }}>{todayStr}</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--color-stone-600)' }}>{todayStr}</p>
         </div>
-        {(user?.role === 'Familien-Administrator' || user?.role === 'System-Administrator') && (
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-sm font-medium"
-            style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
           >
-            ＋ Widget
+            <Plus size={14} /> Widget
           </button>
-        )}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium"
+            style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
+          >
+            <LogOut size={14} /> Logout
+          </button>
+        </div>
       </div>
 
       {/* Drag-and-Drop Grid */}
@@ -106,6 +167,8 @@ export default function DashboardPage() {
         rowHeight={90}
         width={containerWidth - 64}
         onLayoutChange={handleLayoutChange}
+        onDragStop={saveToBackend}
+        onResizeStop={saveToBackend}
         draggableHandle=".widget-drag-handle"
         isResizable={true}
         isDraggable={true}
@@ -119,60 +182,32 @@ export default function DashboardPage() {
 
           const isWeather = instance.widgetId === 'weather'
 
-          // Weather widget — special green background + settings + remove
           if (isWeather) {
             return (
-              <div key={instance.instanceId} className="rounded-2xl p-5 relative group" style={{ background: '#7c9a7e' }}>
-                {/* Drag handle */}
-                <div className="widget-drag-handle absolute top-2 left-2 right-10 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="w-8 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.4)' }} />
-                </div>
-                {/* Remove button */}
-                <button
-                  onClick={() => removeWidget(instance.instanceId)}
-                  className="absolute top-2 right-2 w-6 h-6 rounded-lg text-xs flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.8)' }}
-                  title="Widget entfernen"
-                >
-                  ✕
-                </button>
-                {/* Weather widget with settings */}
+              <WidgetShell
+                key={instance.instanceId}
+                onRemove={() => removeWidget(instance.instanceId)}
+                variant="weather"
+              >
                 <WeatherWidget
                   settings={instance.settings}
                   onSettingsChange={(newSettings) =>
                     updateWidgetSettings(instance.instanceId, newSettings)
                   }
                 />
-              </div>
+              </WidgetShell>
             )
           }
 
-          // Other widgets (calendar, todo, schedule) — standard rendering
           return (
-            <div
+            <WidgetShell
               key={instance.instanceId}
-              className="rounded-2xl p-5 relative group"
-              style={{ background: '#ffffff', border: '1px solid #e8e8e2' }}
+              onRemove={() => removeWidget(instance.instanceId)}
+              variant="default"
+              title={config.name}
             >
-              {/* Drag handle */}
-              <div className="widget-drag-handle absolute top-2 left-2 right-10 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <div className="w-8 h-1 rounded-full" style={{ background: '#d4d4cc' }} />
-              </div>
-              {/* Remove button */}
-              <button
-                onClick={() => removeWidget(instance.instanceId)}
-                className="absolute top-2 right-2 w-6 h-6 rounded-lg text-xs flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{ background: '#fef2f2', border: 'none', cursor: 'pointer', color: '#c45c5c' }}
-                title="Widget entfernen"
-              >
-                ✕
-              </button>
-              {/* Header */}
-              <div className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#b5b5a8' }}>
-                {config.name}
-              </div>
               <config.component />
-            </div>
+            </WidgetShell>
           )
         })}
       </ReactGridLayout>
@@ -183,7 +218,7 @@ export default function DashboardPage() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.2)',
+            background: 'oklch(0 0 0 / 0.2)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -193,13 +228,13 @@ export default function DashboardPage() {
         >
           <div
             className="rounded-2xl p-6 flex flex-col gap-4 w-96"
-            style={{ background: '#ffffff', border: '1px solid #e8e8e2', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
+            style={{ background: 'white', border: '1px solid var(--color-stone-border)', boxShadow: '0 8px 32px oklch(0 0 0 / 0.12)' }}
           >
             <div>
-              <div className="text-sm font-semibold" style={{ color: '#2d2d2d' }}>
+              <div className="text-sm font-semibold" style={{ color: 'var(--color-stone-900)' }}>
                 Widget hinzufügen
               </div>
-              <div className="text-xs mt-0.5" style={{ color: '#9e9e96' }}>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--color-stone-600)' }}>
                 Wähle ein Widget für dein Dashboard
               </div>
             </div>
@@ -207,28 +242,30 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-2">
               {WIDGETS.filter((w) => canSeeWidget(w.requiredRole, user?.role)).map((w) => {
                 const isActive = dashboardWidgets.some((dw) => dw.widgetId === w.id)
-                const emoji = w.id === 'weather' ? '🌤️' : w.id === 'calendar' ? '📅' : w.id === 'todo' ? '✅' : '📋'
+                const WidgetIcon = w.id === 'weather' ? Cloud : w.id === 'calendar' ? Calendar : w.id === 'todo' ? CheckSquare : LayoutList
                 return (
                   <div
                     key={w.id}
                     className="flex items-center gap-3 p-3 rounded-xl"
                     style={{
-                      background: isActive ? '#f8f8f4' : '#ffffff',
-                      border: '1px solid #e8e8e2',
+                      background: isActive ? 'var(--color-stone-50)' : 'white',
+                      border: '1px solid var(--color-stone-border)',
                       opacity: isActive ? 0.6 : 1,
                     }}
                   >
-                    <div className="text-2xl">{emoji}</div>
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'var(--color-stone-100)', color: 'var(--color-stone-600)' }}>
+                      <WidgetIcon size={18} />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium" style={{ color: '#2d2d2d' }}>
+                      <div className="text-sm font-medium" style={{ color: 'var(--color-stone-900)' }}>
                         {w.name}
                       </div>
-                      <div className="text-xs" style={{ color: '#9e9e96' }}>
+                      <div className="text-xs" style={{ color: 'var(--color-stone-600)' }}>
                         {w.description}
                       </div>
                     </div>
                     {isActive ? (
-                      <span className="text-xs px-2 py-1 rounded-lg" style={{ background: '#f0f5f0', color: '#7c9a7e' }}>
+                      <span className="text-xs px-2 py-1 rounded-lg" style={{ background: 'var(--color-sage-50)', color: 'var(--color-sage-500)' }}>
                         Aktiv
                       </span>
                     ) : (
@@ -238,7 +275,7 @@ export default function DashboardPage() {
                           setShowAddModal(false)
                         }}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium text-white"
-                        style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                        style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                       >
                         Hinzufügen
                       </button>
@@ -251,7 +288,7 @@ export default function DashboardPage() {
             <button
               onClick={() => setShowAddModal(false)}
               className="w-full px-4 py-2 rounded-xl text-sm"
-              style={{ background: '#f4f4f0', color: '#7a7a72', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ background: 'var(--color-stone-100)', color: 'var(--color-stone-700)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               Schließen
             </button>

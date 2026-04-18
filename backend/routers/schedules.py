@@ -4,7 +4,7 @@ from typing import List
 
 from database import get_session
 from models.schedule import ScheduleEntry, ScheduleEntryCreate, ScheduleEntryPublic, ScheduleEntryUpdate
-from models.user import User
+from models.user import Role, User
 from dependencies import get_current_user
 
 router = APIRouter(

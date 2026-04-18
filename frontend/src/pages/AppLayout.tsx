@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Menu } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 
@@ -21,15 +22,15 @@ export default function AppLayout() {
         {/* Mobile header */}
         <header
           className="flex items-center gap-3 px-4 py-3 md:hidden"
-          style={{ background: '#eeeee9', borderBottom: '1px solid #e0e0d8' }}
+          style={{ background: 'var(--color-stone-200)', borderBottom: '1px solid var(--color-stone-sidebar)' }}
         >
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-1.5 rounded-lg text-lg leading-none"
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#2d2d2d' }}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-stone-900)' }}
             aria-label="Menü öffnen"
           >
-            ☰
+            <Menu size={18} />
           </button>
           <span className="font-semibold text-sm">FamilyBoard</span>
         </header>

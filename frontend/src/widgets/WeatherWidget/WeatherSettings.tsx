@@ -19,7 +19,6 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
   const modalRef = useRef<HTMLDivElement>(null)
   const [form, setForm] = useState<WeatherSettingsData>({ ...settings })
 
-  // Location search state
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<GeoLocation[]>([])
   const [searching, setSearching] = useState(false)
@@ -68,8 +67,8 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
   }
 
   const inputStyle: React.CSSProperties = {
-    background: '#f8f8f4',
-    borderColor: '#e8e8e2',
+    background: 'var(--color-stone-50)',
+    borderColor: 'var(--color-stone-border)',
     fontFamily: 'inherit',
   }
 
@@ -78,7 +77,7 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.2)',
+        background: 'oklch(0 0 0 / 0.2)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -89,17 +88,17 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
         ref={modalRef}
         className="rounded-2xl p-6 flex flex-col gap-5 w-96 max-h-[90vh] overflow-y-auto"
         style={{
-          background: '#ffffff',
-          border: '1px solid #e8e8e2',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          background: 'white',
+          border: '1px solid var(--color-stone-border)',
+          boxShadow: '0 8px 32px oklch(0 0 0 / 0.12)',
         }}
       >
         {/* Header */}
         <div>
-          <div className="text-sm font-semibold" style={{ color: '#2d2d2d' }}>
+          <div className="text-sm font-semibold" style={{ color: 'var(--color-stone-900)' }}>
             Wetter-Einstellungen
           </div>
-          <div className="text-xs mt-0.5" style={{ color: '#9e9e96' }}>
+          <div className="text-xs mt-0.5" style={{ color: 'var(--color-stone-600)' }}>
             Standort und Darstellung des Wetter-Widgets konfigurieren
           </div>
         </div>
@@ -107,7 +106,7 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
         <div className="flex flex-col gap-4">
           {/* Location */}
           <div>
-            <label className="text-xs mb-1.5 block font-medium" style={{ color: '#4a4a44' }}>
+            <label className="text-xs mb-1.5 block font-medium" style={{ color: 'var(--color-stone-800)' }}>
               Standort
             </label>
             {!showLocationSearch ? (
@@ -115,18 +114,18 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
                 onClick={() => setShowLocationSearch(true)}
                 className="w-full px-3 py-2.5 rounded-lg text-sm text-left flex items-center justify-between transition-colors"
                 style={{
-                  background: '#f8f8f4',
-                  border: '1px solid #e8e8e2',
+                  background: 'var(--color-stone-50)',
+                  border: '1px solid var(--color-stone-border)',
                   cursor: 'pointer',
                   fontFamily: 'inherit',
-                  color: '#2d2d2d',
+                  color: 'var(--color-stone-900)',
                 }}
               >
                 <span>
                   📍 {form.locationName}
-                  <span className="ml-1" style={{ color: '#9e9e96' }}>· {form.locationCountry}</span>
+                  <span className="ml-1" style={{ color: 'var(--color-stone-600)' }}>· {form.locationCountry}</span>
                 </span>
-                <span style={{ color: '#9e9e96' }}>✎</span>
+                <span style={{ color: 'var(--color-stone-600)' }}>✎</span>
               </button>
             ) : (
               <div className="flex flex-col gap-1.5">
@@ -144,12 +143,12 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <div
                         className="w-3.5 h-3.5 border-2 rounded-full animate-spin"
-                        style={{ borderColor: '#e8e8e2', borderTopColor: '#7c9a7e' }}
+                        style={{ borderColor: 'var(--color-stone-border)', borderTopColor: 'var(--color-sage-500)' }}
                       />
                     </div>
                   )}
                 </div>
-                <div className="max-h-36 overflow-y-auto rounded-lg" style={{ border: searchResults.length > 0 ? '1px solid #e8e8e2' : 'none' }}>
+                <div className="max-h-36 overflow-y-auto rounded-lg" style={{ border: searchResults.length > 0 ? '1px solid var(--color-stone-border)' : 'none' }}>
                   {searchResults.map((loc, i) => (
                     <button
                       key={`${loc.lat}-${loc.lon}-${i}`}
@@ -159,15 +158,15 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
                         background: 'transparent',
                         border: 'none',
                         fontFamily: 'inherit',
-                        color: '#2d2d2d',
+                        color: 'var(--color-stone-900)',
                       }}
                     >
                       <span className="font-medium">{loc.name}</span>
-                      <span className="ml-1" style={{ color: '#9e9e96' }}>· {loc.country}</span>
+                      <span className="ml-1" style={{ color: 'var(--color-stone-600)' }}>· {loc.country}</span>
                     </button>
                   ))}
                   {searchQuery.trim().length >= 2 && !searching && searchResults.length === 0 && (
-                    <p className="text-xs px-3 py-2" style={{ color: '#9e9e96' }}>
+                    <p className="text-xs px-3 py-2" style={{ color: 'var(--color-stone-600)' }}>
                       Keine Ergebnisse gefunden
                     </p>
                   )}
@@ -175,7 +174,7 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
                 <button
                   onClick={() => { setShowLocationSearch(false); setSearchQuery(''); setSearchResults([]) }}
                   className="text-xs self-start"
-                  style={{ color: '#9e9e96', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ color: 'var(--color-stone-600)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   Abbrechen
                 </button>
@@ -185,7 +184,7 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
 
           {/* Temperature Unit */}
           <div>
-            <label className="text-xs mb-1.5 block font-medium" style={{ color: '#4a4a44' }}>
+            <label className="text-xs mb-1.5 block font-medium" style={{ color: 'var(--color-stone-800)' }}>
               Temperatureinheit
             </label>
             <div className="flex gap-2">
@@ -195,10 +194,12 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
                   onClick={() => setForm((f) => ({ ...f, temperatureUnit: value }))}
                   className="flex-1 px-3 py-2 rounded-lg text-sm transition-colors"
                   style={{
-                    background: form.temperatureUnit === value ? '#f0f5f0' : '#f8f8f4',
-                    color: form.temperatureUnit === value ? '#7c9a7e' : '#7a7a72',
+                    background: form.temperatureUnit === value ? 'var(--color-sage-50)' : 'var(--color-stone-50)',
+                    color: form.temperatureUnit === value ? 'var(--color-sage-500)' : 'var(--color-stone-700)',
                     fontWeight: form.temperatureUnit === value ? 600 : 400,
-                    border: form.temperatureUnit === value ? '1.5px solid #7c9a7e' : '1px solid #e8e8e2',
+                    border: form.temperatureUnit === value
+                      ? '1.5px solid var(--color-sage-500)'
+                      : '1px solid var(--color-stone-border)',
                     cursor: 'pointer',
                     fontFamily: 'inherit',
                   }}
@@ -215,14 +216,14 @@ export default function WeatherSettings({ settings, onSave, onCancel }: Props) {
           <button
             onClick={() => onSave(form)}
             className="flex-1 px-4 py-2 rounded-xl text-white text-sm font-medium"
-            style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
           >
             Speichern
           </button>
           <button
             onClick={onCancel}
             className="px-4 py-2 rounded-xl text-sm"
-            style={{ background: '#f4f4f0', color: '#7a7a72', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ background: 'var(--color-stone-100)', color: 'var(--color-stone-700)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
           >
             Abbrechen
           </button>

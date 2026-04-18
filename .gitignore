@@ -1,0 +1,3 @@
+.vercel/
+frontend/.vite/
+package-lock.json
