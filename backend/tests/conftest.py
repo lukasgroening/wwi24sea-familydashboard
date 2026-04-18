@@ -14,6 +14,7 @@ from auth import get_password_hash
 # same in-memory database across multiple connections within a single thread.
 SQLITE_URL = "sqlite:///:memory:"
 
+
 @pytest.fixture(name="session")
 def session_fixture():
     engine = create_engine(

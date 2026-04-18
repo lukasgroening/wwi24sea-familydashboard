@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from fastapi import APIRouter, Depends, status
+from sqlmodel import Session
 from dependencies import get_current_user
 from database import get_session
-from models.note import Note, NoteCreate, NoteUpdate, NotePublic
+from models.note import NoteCreate, NoteUpdate, NotePublic
 from models.user import User
+from services import note_service
 
 router = APIRouter(
     prefix="/api/notes",
@@ -18,17 +19,7 @@ def create_note(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    db_note = Note(
-        title=note_in.title, 
-        content=note_in.content,
-        family_id=current_user.family_id
-    )
-
-    session.add(db_note)
-    session.commit()
-    session.refresh(db_note)
-
-    return db_note
+    return note_service.create_note(session, note_in, current_user.family_id)
 
 
 @router.get("/", response_model=list[NotePublic])
@@ -36,10 +27,7 @@ def read_notes(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    notes = session.exec(
-        select(Note).where(Note.family_id == current_user.family_id)
-    ).all()
-    return notes
+    return note_service.get_family_notes(session, current_user.family_id)
 
 
 @router.patch("/{note_id}", response_model=NotePublic)
@@ -49,20 +37,9 @@ def update_note(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    db_note = session.get(Note, note_id)
-    if not db_note or db_note.family_id != current_user.family_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Notiz nicht gefunden."
-        )
-
-    update_data = note_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_note, key, value)
-
-    session.add(db_note)
-    session.commit()
-    session.refresh(db_note)
-    return db_note
+    return note_service.update_note(
+        session, note_id, note_update, current_user.family_id
+    )
 
 
 @router.delete("/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -71,12 +48,5 @@ def delete_note(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    db_note = session.get(Note, note_id)
-    if not db_note or db_note.family_id != current_user.family_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Notiz nicht gefunden."
-        )
-
-    session.delete(db_note)
-    session.commit()
+    note_service.delete_note(session, note_id, current_user.family_id)
     return None
