@@ -29,4 +29,6 @@ def update_dashboard_layout(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    return dashboard_service.update_user_layout(session, current_user.id, widgets)
+    return dashboard_service.update_user_layout(
+        session, current_user.id, current_user.family_id, widgets
+    )

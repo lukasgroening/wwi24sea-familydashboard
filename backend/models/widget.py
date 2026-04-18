@@ -16,6 +16,7 @@ class WidgetConfig(WidgetBase, table=True):
     __tablename__ = "widget_configs"
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
+    family_id: Optional[int] = Field(default=None, foreign_key="family.id")
 
 
 class WidgetCreate(WidgetBase):
@@ -25,3 +26,4 @@ class WidgetCreate(WidgetBase):
 class WidgetResponse(WidgetBase):
     id: int
     user_id: int
+    family_id: Optional[int] = None
