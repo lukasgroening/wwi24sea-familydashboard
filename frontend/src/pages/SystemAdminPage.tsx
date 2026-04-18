@@ -1,20 +1,22 @@
 import { useState } from 'react'
+import { X } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import api from '../lib/api'
 import type { User, Role, Family } from '../types'
+import ErrorAlert from '../components/ErrorAlert'
 
 const ROLES: Role[] = ['System-Administrator', 'Familien-Administrator', 'Nutzer']
 
 const ROLE_BADGE: Record<Role, { background: string; color: string }> = {
-  'System-Administrator': { background: '#fef3c7', color: '#92400e' },
-  'Familien-Administrator': { background: '#f0f5f0', color: '#3a6b3c' },
-  'Nutzer': { background: '#f4f4f0', color: '#6b6b63' },
+  'System-Administrator': { background: 'var(--color-warning-50)', color: 'var(--color-warning-800)' },
+  'Familien-Administrator': { background: 'var(--color-sage-50)', color: 'oklch(0.480 0.091 145)' },
+  'Nutzer': { background: 'var(--color-stone-100)', color: 'var(--color-stone-700)' },
 }
 
 const cardStyle: React.CSSProperties = {
-  background: '#ffffff',
-  border: '1px solid #e8e8e2',
+  background: 'white',
+  border: '1px solid var(--color-stone-border)',
   borderRadius: '16px',
   padding: '24px',
 }
@@ -23,25 +25,23 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '9px 13px',
   borderRadius: '10px',
-  border: '1px solid #e8e8e2',
-  background: '#f8f8f4',
+  border: '1px solid var(--color-stone-border)',
+  background: 'var(--color-stone-50)',
   fontFamily: 'inherit',
   fontSize: '14px',
   outline: 'none',
-  color: '#2d2d2d',
+  color: 'var(--color-stone-900)',
   boxSizing: 'border-box',
 }
 
 export default function SystemAdminPage() {
   const queryClient = useQueryClient()
 
-  // --- Familien State ---
   const [showFamilyForm, setShowFamilyForm] = useState(false)
   const [familyName, setFamilyName] = useState('')
   const [familyError, setFamilyError] = useState('')
   const [deleteFamilyConfirm, setDeleteFamilyConfirm] = useState<number | null>(null)
 
-  // --- User State ---
   const [showUserForm, setShowUserForm] = useState(false)
   const [editUser, setEditUser] = useState<User | null>(null)
   const [deleteUserConfirm, setDeleteUserConfirm] = useState<number | null>(null)
@@ -49,7 +49,6 @@ export default function SystemAdminPage() {
   const [userError, setUserError] = useState('')
   const [deleteUserError, setDeleteUserError] = useState('')
 
-  // --- Queries ---
   const { data: families = [], isLoading: familiesLoading } = useQuery<Family[]>({
     queryKey: ['families'],
     queryFn: () => api.get('/api/families/').then((r) => r.data),
@@ -60,7 +59,6 @@ export default function SystemAdminPage() {
     queryFn: () => api.get('/api/users/').then((r) => r.data),
   })
 
-  // --- Family Mutations ---
   const createFamilyMutation = useMutation({
     mutationFn: (name: string) => api.post('/api/families/', { name }).then((r) => r.data),
     onSuccess: () => {
@@ -82,7 +80,6 @@ export default function SystemAdminPage() {
     },
   })
 
-  // --- User Mutations ---
   const createUserMutation = useMutation({
     mutationFn: (data: { username: string; password: string; role: Role; family_id?: number }) =>
       api.post('/api/users/', data).then((r) => r.data),
@@ -137,7 +134,7 @@ export default function SystemAdminPage() {
     setShowUserForm(false)
   }
 
-  const handleUserSubmit = (e: React.FormEvent) => {
+  const handleUserSubmit: React.ComponentProps<'form'>['onSubmit'] = (e) => {
     e.preventDefault()
     const payload = {
       username: userForm.username,
@@ -168,7 +165,7 @@ export default function SystemAdminPage() {
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="text-xl font-semibold">System-Verwaltung</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#9e9e96' }}>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--color-stone-600)' }}>
             Familien und alle Benutzer systemweit verwalten
           </p>
         </div>
@@ -180,15 +177,14 @@ export default function SystemAdminPage() {
             <button
               onClick={() => { setShowFamilyForm(true); setFamilyError(''); setFamilyName('') }}
               className="px-3 py-1.5 rounded-xl text-white text-sm font-medium"
-              style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               + Neue Familie
             </button>
           </div>
 
-          {/* Familie anlegen Form */}
           {showFamilyForm && (
-            <div className="mb-4 p-4 rounded-xl flex flex-col gap-3" style={{ background: '#f8f8f4', border: '1px solid #e8e8e2' }}>
+            <div className="mb-4 p-4 rounded-xl flex flex-col gap-3" style={{ background: 'var(--color-stone-50)', border: '1px solid var(--color-stone-border)' }}>
               <div className="text-sm font-medium">Neue Familie anlegen</div>
               <div className="flex gap-2">
                 <input
@@ -202,27 +198,25 @@ export default function SystemAdminPage() {
                   onClick={() => { if (familyName.trim()) createFamilyMutation.mutate(familyName.trim()) }}
                   disabled={!familyName.trim() || createFamilyMutation.isPending}
                   className="px-4 py-2 rounded-xl text-white text-sm font-medium disabled:opacity-50"
-                  style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                  style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
                 >
                   Speichern
                 </button>
                 <button
                   onClick={() => { setShowFamilyForm(false); setFamilyName('') }}
                   className="px-3 py-2 rounded-xl text-sm"
-                  style={{ background: '#f4f4f0', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#6b6b63' }}
+                  style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
                 >
                   Abbruch
                 </button>
               </div>
-              {familyError && (
-                <p className="text-sm px-3 py-2 rounded-lg" style={{ background: '#fef2f2', color: '#b91c1c' }}>{familyError}</p>
-              )}
+              <ErrorAlert message={familyError} />
             </div>
           )}
 
-          {familiesLoading && <p className="text-sm" style={{ color: '#9e9e96' }}>Lade Familien…</p>}
+          {familiesLoading && <p className="text-sm" style={{ color: 'var(--color-stone-600)' }}>Lade Familien…</p>}
           {!familiesLoading && families.length === 0 && (
-            <p className="text-sm" style={{ color: '#b5b5a8' }}>Noch keine Familien angelegt.</p>
+            <p className="text-sm" style={{ color: 'var(--color-stone-500)' }}>Noch keine Familien angelegt.</p>
           )}
           {families.length > 0 && (
             <div className="flex flex-col gap-2">
@@ -230,15 +224,15 @@ export default function SystemAdminPage() {
                 <div
                   key={family.id}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl"
-                  style={{ background: '#f8f8f4', border: '1px solid #e8e8e2' }}
+                  style={{ background: 'var(--color-stone-50)', border: '1px solid var(--color-stone-border)' }}
                 >
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-semibold flex-shrink-0"
-                    style={{ background: '#7c9a7e' }}>
+                    style={{ background: 'var(--color-sage-500)' }}>
                     {family.name[0]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium">{family.name}</div>
-                    <div className="text-xs" style={{ color: '#9e9e96' }}>{family.member_count} Mitglied{family.member_count !== 1 ? 'er' : ''}</div>
+                    <div className="text-xs" style={{ color: 'var(--color-stone-600)' }}>{family.member_count} Mitglied{family.member_count !== 1 ? 'er' : ''}</div>
                   </div>
                   {deleteFamilyConfirm === family.id ? (
                     <div className="flex gap-1">
@@ -246,14 +240,14 @@ export default function SystemAdminPage() {
                         onClick={() => deleteFamilyMutation.mutate(family.id)}
                         disabled={deleteFamilyMutation.isPending}
                         className="px-2 py-1 rounded-lg text-xs font-medium"
-                        style={{ background: '#fee2e2', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#b91c1c' }}
+                        style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
                       >
                         Löschen
                       </button>
                       <button
                         onClick={() => setDeleteFamilyConfirm(null)}
                         className="px-2 py-1 rounded-lg text-xs font-medium"
-                        style={{ background: '#f4f4f0', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#6b6b63' }}
+                        style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
                       >
                         Abbruch
                       </button>
@@ -262,10 +256,10 @@ export default function SystemAdminPage() {
                     <button
                       onClick={() => setDeleteFamilyConfirm(family.id)}
                       className="w-7 h-7 rounded-lg flex items-center justify-center text-xs"
-                      style={{ background: '#fef2f2', border: 'none', cursor: 'pointer', color: '#c45c5c' }}
+                      style={{ background: 'var(--color-danger-50)', border: 'none', cursor: 'pointer', color: 'var(--color-danger-500)' }}
                       title="Familie löschen"
                     >
-                      ✕
+                      <X size={12} />
                     </button>
                   )}
                 </div>
@@ -281,15 +275,14 @@ export default function SystemAdminPage() {
             <button
               onClick={() => { setShowUserForm(true); setEditUser(null); setUserForm({ username: '', password: '', role: 'Nutzer', family_id: '' }); setUserError('') }}
               className="px-3 py-1.5 rounded-xl text-white text-sm font-medium"
-              style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               + Benutzer hinzufügen
             </button>
           </div>
 
-          {/* User Formular */}
           {(showUserForm || editUser) && (
-            <div className="mb-4 p-4 rounded-xl flex flex-col gap-3" style={{ background: '#f8f8f4', border: '1px solid #e8e8e2' }}>
+            <div className="mb-4 p-4 rounded-xl flex flex-col gap-3" style={{ background: 'var(--color-stone-50)', border: '1px solid var(--color-stone-border)' }}>
               <div className="text-sm font-medium">
                 {editUser ? `Benutzer bearbeiten: ${editUser.username}` : 'Neuen Benutzer anlegen'}
               </div>
@@ -307,7 +300,7 @@ export default function SystemAdminPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1.5">
-                      Passwort {editUser && <span style={{ color: '#9e9e96' }}>(leer = unverändert)</span>}
+                      Passwort {editUser && <span style={{ color: 'var(--color-stone-600)' }}>(leer = unverändert)</span>}
                     </label>
                     <input
                       type="password"
@@ -342,15 +335,13 @@ export default function SystemAdminPage() {
                     </select>
                   </div>
                 </div>
-                {userError && (
-                  <p className="text-sm px-3 py-2 rounded-lg" style={{ background: '#fef2f2', color: '#b91c1c' }}>{userError}</p>
-                )}
+                <ErrorAlert message={userError} />
                 <div className="flex gap-2">
                   <button
                     type="submit"
                     disabled={createUserMutation.isPending || updateUserMutation.isPending}
                     className="px-4 py-2 rounded-xl text-white text-sm font-medium disabled:opacity-60"
-                    style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                    style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                   >
                     {createUserMutation.isPending || updateUserMutation.isPending ? 'Speichern…' : 'Speichern'}
                   </button>
@@ -358,7 +349,7 @@ export default function SystemAdminPage() {
                     type="button"
                     onClick={closeUserForm}
                     className="px-4 py-2 rounded-xl text-sm font-medium"
-                    style={{ background: '#f4f4f0', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#6b6b63' }}
+                    style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
                   >
                     Abbrechen
                   </button>
@@ -367,37 +358,30 @@ export default function SystemAdminPage() {
             </div>
           )}
 
-          {deleteUserError && (
-            <div className="flex items-center justify-between text-sm px-4 py-3 rounded-xl mb-3"
-              style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}>
-              <span>{deleteUserError}</span>
-              <button onClick={() => setDeleteUserError('')}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#b91c1c' }}>✕</button>
-            </div>
-          )}
+          <ErrorAlert message={deleteUserError} onDismiss={() => setDeleteUserError('')} />
 
-          {usersLoading && <p className="text-sm" style={{ color: '#9e9e96' }}>Lade Benutzer…</p>}
+          {usersLoading && <p className="text-sm" style={{ color: 'var(--color-stone-600)' }}>Lade Benutzer…</p>}
           {!usersLoading && users.length === 0 && (
-            <p className="text-sm" style={{ color: '#b5b5a8' }}>Keine Benutzer gefunden.</p>
+            <p className="text-sm" style={{ color: 'var(--color-stone-500)' }}>Keine Benutzer gefunden.</p>
           )}
           {users.length > 0 && (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #e8e8e2' }}>
-                    <th className="text-left pb-3 font-medium" style={{ color: '#9e9e96' }}>Benutzer</th>
-                    <th className="text-left pb-3 font-medium" style={{ color: '#9e9e96' }}>Rolle</th>
-                    <th className="text-left pb-3 font-medium" style={{ color: '#9e9e96' }}>Familie</th>
-                    <th className="text-right pb-3 font-medium" style={{ color: '#9e9e96' }}>Aktionen</th>
+                  <tr style={{ borderBottom: '1px solid var(--color-stone-border)' }}>
+                    <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Benutzer</th>
+                    <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Rolle</th>
+                    <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Familie</th>
+                    <th className="text-right pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Aktionen</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((user) => (
-                    <tr key={user.id} style={{ borderBottom: '1px solid #f0f0ea' }}>
+                    <tr key={user.id} style={{ borderBottom: '1px solid var(--color-stone-row)' }}>
                       <td className="py-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0"
-                            style={{ background: '#7c9a7e' }}>
+                            style={{ background: 'var(--color-sage-500)' }}>
                             {user.username[0]?.toUpperCase()}
                           </div>
                           <span className="font-medium">{user.username}</span>
@@ -405,19 +389,19 @@ export default function SystemAdminPage() {
                       </td>
                       <td className="py-3">
                         <span className="px-2.5 py-1 rounded-full text-xs font-medium"
-                          style={ROLE_BADGE[user.role] ?? { background: '#f4f4f0', color: '#6b6b63' }}>
+                          style={ROLE_BADGE[user.role] ?? { background: 'var(--color-stone-100)', color: 'var(--color-stone-700)' }}>
                           {user.role}
                         </span>
                       </td>
-                      <td className="py-3 text-sm" style={{ color: '#9e9e96' }}>
-                        {getFamilyName(user.family_id) ?? <span style={{ color: '#d4d4cc' }}>—</span>}
+                      <td className="py-3 text-sm" style={{ color: 'var(--color-stone-600)' }}>
+                        {getFamilyName(user.family_id) ?? <span style={{ color: 'var(--color-stone-400)' }}>—</span>}
                       </td>
                       <td className="py-3 text-right">
                         <div className="flex gap-1 justify-end">
                           <button
                             onClick={() => openEditUser(user)}
                             className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                            style={{ background: '#f4f4f0', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#2d2d2d' }}
+                            style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-900)' }}
                           >
                             Bearbeiten
                           </button>
@@ -427,14 +411,14 @@ export default function SystemAdminPage() {
                                 onClick={() => deleteUserMutation.mutate(user.id)}
                                 disabled={deleteUserMutation.isPending}
                                 className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                                style={{ background: '#fee2e2', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#b91c1c' }}
+                                style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
                               >
                                 Bestätigen
                               </button>
                               <button
                                 onClick={() => setDeleteUserConfirm(null)}
                                 className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                                style={{ background: '#f4f4f0', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#6b6b63' }}
+                                style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
                               >
                                 Abbruch
                               </button>
@@ -443,7 +427,7 @@ export default function SystemAdminPage() {
                             <button
                               onClick={() => setDeleteUserConfirm(user.id)}
                               className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                              style={{ background: '#fee2e2', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#b91c1c' }}
+                              style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
                             >
                               Löschen
                             </button>

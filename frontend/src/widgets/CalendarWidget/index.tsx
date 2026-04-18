@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ArrowRight } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
@@ -32,7 +33,6 @@ export default function CalendarWidget() {
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() })
   const navigate = useNavigate()
 
-  // React Query — gleicher Key wie CalendarPage, bleibt automatisch synchron
   const { data: events = [], isLoading, error } = useQuery<CalendarEvent[]>({
     queryKey: ['calendar-events'],
     queryFn: () => api.get('/api/calendar/events').then((r) => r.data),
@@ -70,7 +70,6 @@ export default function CalendarWidget() {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <span className="font-semibold text-base">{MONTHS[view.month]} {view.year}</span>
         <div className="flex gap-1">
@@ -79,7 +78,7 @@ export default function CalendarWidget() {
               key={label as string}
               onClick={fn as () => void}
               className="w-7 h-7 rounded-lg text-sm flex items-center justify-center transition-colors"
-              style={{ border: '1px solid #e8e8e2', background: 'none', cursor: 'pointer', color: '#7a7a72' }}
+              style={{ border: '1px solid var(--color-stone-border)', background: 'none', cursor: 'pointer', color: 'var(--color-stone-700)' }}
             >
               {label as string}
             </button>
@@ -87,60 +86,59 @@ export default function CalendarWidget() {
         </div>
       </div>
 
-      {/* Grid */}
       <div className="grid grid-cols-7 gap-0.5">
         {DAYS.map((d) => (
-          <div key={d} className="text-center text-xs font-semibold py-1 pb-2 tracking-wide" style={{ color: '#b5b5a8' }}>
+          <div key={d} className="text-center text-xs font-semibold py-1 pb-2 tracking-wide" style={{ color: 'var(--color-stone-500)' }}>
             {d}
           </div>
         ))}
         {cells.map((cell, i) => {
           const today_ = isToday(cell.day, cell.current)
           const hasEvent = cell.current && eventDates.has(cell.day)
+          const cellKey = cell.current ? `cur-${cell.day}` : `filler-${i}`
           return (
             <div
-              key={i}
+              key={cellKey}
               className="text-center py-1.5 rounded-lg text-xs cursor-pointer transition-colors"
               style={{
-                background: today_ ? '#7c9a7e' : 'transparent',
-                color: today_ ? 'white' : cell.current ? '#4a4a44' : '#c8c8c0',
+                background: today_ ? 'var(--color-sage-500)' : 'transparent',
+                color: today_ ? 'white' : cell.current ? 'var(--color-stone-800)' : 'var(--color-stone-dim)',
                 fontWeight: today_ ? 500 : 400,
               }}
             >
               {cell.day}
               {hasEvent && (
-                <div className="w-1 h-1 rounded-full mx-auto mt-0.5" style={{ background: today_ ? 'rgba(255,255,255,0.7)' : '#7c9a7e' }} />
+                <div className="w-1 h-1 rounded-full mx-auto mt-0.5" style={{ background: today_ ? 'oklch(1 0 0 / 0.7)' : 'var(--color-sage-500)' }} />
               )}
             </div>
           )
         })}
       </div>
 
-      {/* Upcoming events */}
-      <div className="border-t pt-3 flex flex-col gap-2" style={{ borderColor: '#f0f0ea' }}>
+      <div className="border-t pt-3 flex flex-col gap-2" style={{ borderColor: 'var(--color-stone-row)' }}>
         <div className="flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#b5b5a8' }}>
+          <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--color-stone-500)' }}>
             Nächste Termine
           </div>
           <button
             onClick={() => navigate('/calendar')}
             className="text-xs px-2 py-1 rounded-lg transition-colors"
-            style={{ background: '#f4f4f0', color: '#7a7a72', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ background: 'var(--color-stone-100)', color: 'var(--color-stone-700)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
           >
-            Alle anzeigen →
+            Alle anzeigen <ArrowRight size={12} className="inline-block" />
           </button>
         </div>
-        {isLoading && <p className="text-xs" style={{ color: '#b5b5a8' }}>Lade Termine…</p>}
-        {error && <p className="text-xs" style={{ color: '#b91c1c' }}>Termine konnten nicht geladen werden.</p>}
+        {isLoading && <p className="text-xs" style={{ color: 'var(--color-stone-500)' }}>Lade Termine…</p>}
+        {error && <p className="text-xs" style={{ color: 'var(--color-danger-700)' }}>Termine konnten nicht geladen werden.</p>}
         {!isLoading && !error && upcomingEvents.length === 0 && (
-          <p className="text-xs" style={{ color: '#b5b5a8' }}>Keine bevorstehenden Termine.</p>
+          <p className="text-xs" style={{ color: 'var(--color-stone-500)' }}>Keine bevorstehenden Termine.</p>
         )}
         {upcomingEvents.map((ev, i) => (
           <div key={ev.id ?? i} className="flex items-center gap-2.5">
-            <div className="w-0.5 h-8 rounded-full flex-shrink-0" style={{ background: ev.color ?? '#7c9a7e' }} />
+            <div className="w-0.5 h-8 rounded-full shrink-0" style={{ background: ev.color ?? 'var(--color-sage-500)' }} />
             <div>
               <div className="text-sm font-medium">{ev.title}</div>
-              <div className="text-xs" style={{ color: '#9e9e96' }}>
+              <div className="text-xs" style={{ color: 'var(--color-stone-600)' }}>
                 {new Date(ev.start_time).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}
                 {' · '}
                 {new Date(ev.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}

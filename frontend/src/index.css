@@ -1,27 +1,47 @@
 @import "tailwindcss";
 
 @theme {
-  --color-sage-50: #f0f5f0;
-  --color-sage-100: #dceadc;
-  --color-sage-200: #b8d4b8;
-  --color-sage-300: #a8c4a8;
-  --color-sage-400: #8eae90;
-  --color-sage-500: #7c9a7e;
-  --color-sage-600: #658067;
-  --color-sage-700: #506651;
-  --color-sage-800: #3b4d3c;
-  --color-sage-900: #273328;
+  --color-sage-50: oklch(0.965 0.008 146.0);
+  --color-sage-100: oklch(0.923 0.024 145.6);
+  --color-sage-200: oklch(0.842 0.049 145.2);
+  --color-sage-300: oklch(0.792 0.049 145.2);
+  --color-sage-400: oklch(0.718 0.055 146.7);
+  --color-sage-500: oklch(0.655 0.053 146.8);
+  --color-sage-600: oklch(0.571 0.049 146.9);
+  --color-sage-700: oklch(0.486 0.042 146.1);
+  --color-sage-800: oklch(0.399 0.036 146.4);
+  --color-sage-900: oklch(0.306 0.025 147.2);
 
-  --color-stone-50: #f8f8f4;
-  --color-stone-100: #f4f4f0;
-  --color-stone-200: #eeeee9;
-  --color-stone-300: #e4e4de;
-  --color-stone-400: #d4d4cc;
-  --color-stone-500: #b5b5a8;
-  --color-stone-600: #9e9e96;
-  --color-stone-700: #7a7a72;
-  --color-stone-800: #4a4a44;
-  --color-stone-900: #2d2d2d;
+  --color-stone-50: oklch(0.978 0.005 106.9);
+  --color-stone-100: oklch(0.966 0.005 106.9);
+  --color-stone-200: oklch(0.948 0.007 106.8);
+  --color-stone-300: oklch(0.917 0.008 106.8);
+  --color-stone-400: oklch(0.868 0.011 106.8);
+  --color-stone-500: oklch(0.769 0.018 106.9);
+  --color-stone-600: oklch(0.697 0.011 106.8);
+  --color-stone-700: oklch(0.577 0.012 106.9);
+  --color-stone-800: oklch(0.407 0.010 106.9);
+  --color-stone-900: oklch(0.297 0.000 0);
+
+  /* Danger (Rot) */
+  --color-danger-50:  oklch(0.971 0.013 17.0);
+  --color-danger-100: oklch(0.936 0.031 17.6);
+  --color-danger-200: oklch(0.885 0.059 18.3);
+  --color-danger-500: oklch(0.602 0.134 21.9);
+  --color-danger-700: oklch(0.505 0.190 27.5);
+
+  /* Warning (Amber) */
+  --color-warning-50:  oklch(0.962 0.058 95.6);
+  --color-warning-800: oklch(0.473 0.125 46.2);
+
+  /* Role badge (Familien-Administrator) */
+  --color-role-family: oklch(0.480 0.091 145);
+
+  /* Stone-Extras */
+  --color-stone-border:  oklch(0.929 0.008 106.8);
+  --color-stone-sidebar: oklch(0.904 0.011 106.8);
+  --color-stone-row:     oklch(0.953 0.008 106.8);
+  --color-stone-dim:     oklch(0.831 0.011 106.8);
 
   --font-sans: 'Inter', system-ui, sans-serif;
 }
@@ -35,8 +55,8 @@
 
   body {
     font-family: var(--font-sans);
-    background-color: #f4f4f0;
-    color: #2d2d2d;
+    background-color: oklch(0.966 0.005 106.9);
+    color: oklch(0.297 0.000 0);
     -webkit-font-smoothing: antialiased;
   }
 }

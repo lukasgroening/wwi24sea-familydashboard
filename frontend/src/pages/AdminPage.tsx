@@ -3,18 +3,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import api from '../lib/api'
 import type { User, Role } from '../types'
+import ErrorAlert from '../components/ErrorAlert'
 
 const ROLES: Role[] = ['System-Administrator', 'Familien-Administrator', 'Nutzer']
 
-const ROLE_BADGE: Record<Role, { bg: string; color: string }> = {
-  'System-Administrator': { bg: '#fef3c7', color: '#92400e' },
-  'Familien-Administrator': { bg: '#f0f5f0', color: '#3a6b3c' },
-  'Nutzer': { bg: '#f4f4f0', color: '#6b6b63' },
+const ROLE_BADGE: Record<Role, { background: string; color: string }> = {
+  'System-Administrator': { background: 'var(--color-warning-50)', color: 'var(--color-warning-800)' },
+  'Familien-Administrator': { background: 'var(--color-sage-50)', color: 'var(--color-role-family)' },
+  'Nutzer': { background: 'var(--color-stone-100)', color: 'var(--color-stone-700)' },
 }
 
 const cardStyle: React.CSSProperties = {
-  background: '#ffffff',
-  border: '1px solid #e8e8e2',
+  background: 'white',
+  border: '1px solid var(--color-stone-border)',
   borderRadius: '16px',
   padding: '24px',
 }
@@ -23,18 +24,20 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '9px 13px',
   borderRadius: '10px',
-  border: '1px solid #e8e8e2',
-  background: '#f8f8f4',
+  border: '1px solid var(--color-stone-border)',
+  background: 'var(--color-stone-50)',
   fontFamily: 'inherit',
   fontSize: '14px',
   outline: 'none',
-  color: '#2d2d2d',
+  color: 'var(--color-stone-900)',
   boxSizing: 'border-box',
 }
 
+const MIN_PASSWORD_LENGTH = 6
+
 export default function AdminPage() {
   const queryClient = useQueryClient()
-  const [showForm, setShowForm] = useState(false)
+  const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null)
   const [editUser, setEditUser] = useState<User | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [form, setForm] = useState({ username: '', password: '', role: 'Nutzer' as Role })
@@ -51,7 +54,7 @@ export default function AdminPage() {
       api.post('/api/users/', data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
-      setShowForm(false)
+      setFormMode(null)
       setForm({ username: '', password: '', role: 'Nutzer' })
       setFormError('')
     },
@@ -65,6 +68,7 @@ export default function AdminPage() {
       api.patch(`/api/users/${id}`, data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      setFormMode(null)
       setEditUser(null)
       setFormError('')
     },
@@ -86,14 +90,22 @@ export default function AdminPage() {
     },
   })
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate: React.ComponentProps<'form'>['onSubmit'] = (e) => {
     e.preventDefault()
+    if (form.password.length < MIN_PASSWORD_LENGTH) {
+      setFormError(`Passwort muss mindestens ${MIN_PASSWORD_LENGTH} Zeichen lang sein.`)
+      return
+    }
     createMutation.mutate(form)
   }
 
-  const handleUpdate = (e: React.FormEvent) => {
+  const handleUpdate: React.ComponentProps<'form'>['onSubmit'] = (e) => {
     e.preventDefault()
     if (!editUser) return
+    if (form.password && form.password.length < MIN_PASSWORD_LENGTH) {
+      setFormError(`Passwort muss mindestens ${MIN_PASSWORD_LENGTH} Zeichen lang sein.`)
+      return
+    }
     const data: Partial<{ username: string; password: string; role: Role }> = {
       username: form.username || undefined,
       role: form.role,
@@ -106,13 +118,19 @@ export default function AdminPage() {
     setEditUser(user)
     setForm({ username: user.username, password: '', role: user.role })
     setFormError('')
-    setShowForm(false)
+    setFormMode('edit')
   }
 
   const openCreate = () => {
-    setShowForm(true)
+    setFormMode('create')
     setEditUser(null)
     setForm({ username: '', password: '', role: 'Nutzer' })
+    setFormError('')
+  }
+
+  const closeForm = () => {
+    setFormMode(null)
+    setEditUser(null)
     setFormError('')
   }
 
@@ -122,26 +140,25 @@ export default function AdminPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-semibold">Mitgliederverwaltung</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#9e9e96' }}>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--color-stone-600)' }}>
             Benutzer hinzufügen, bearbeiten und entfernen
           </p>
         </div>
         <button
           onClick={openCreate}
           className="px-4 py-2 rounded-xl text-white text-sm font-medium transition-opacity hover:opacity-90"
-          style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           + Benutzer hinzufügen
         </button>
       </div>
 
-      {/* Create / Edit Form */}
-      {(showForm || editUser) && (
+      {formMode !== null && (
         <div style={cardStyle}>
           <h2 className="text-base font-semibold mb-4">
-            {editUser ? `Benutzer bearbeiten: ${editUser.username}` : 'Neuen Benutzer anlegen'}
+            {formMode === 'edit' && editUser ? `Benutzer bearbeiten: ${editUser.username}` : 'Neuen Benutzer anlegen'}
           </h2>
-          <form onSubmit={editUser ? handleUpdate : handleCreate} className="flex flex-col gap-3">
+          <form onSubmit={formMode === 'edit' ? handleUpdate : handleCreate} className="flex flex-col gap-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Benutzername</label>
@@ -150,12 +167,12 @@ export default function AdminPage() {
                   value={form.username}
                   onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
                   placeholder="z.B. Papa"
-                  required={!editUser}
+                  required={formMode === 'create'}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">
-                  Passwort {editUser && <span style={{ color: '#9e9e96' }}>(leer lassen = unverändert)</span>}
+                  Passwort {formMode === 'edit' && <span style={{ color: 'var(--color-stone-600)' }}>(leer lassen = unverändert)</span>}
                 </label>
                 <input
                   type="password"
@@ -163,14 +180,14 @@ export default function AdminPage() {
                   value={form.password}
                   onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                   placeholder="••••••••"
-                  required={!editUser}
+                  required={formMode === 'create'}
                 />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">Rolle</label>
               <select
-                style={{ ...inputStyle, appearance: 'none' }}
+                style={inputStyle}
                 value={form.role}
                 onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as Role }))}
               >
@@ -180,26 +197,22 @@ export default function AdminPage() {
               </select>
             </div>
 
-            {formError && (
-              <div className="text-sm px-3 py-2 rounded-lg" style={{ background: '#fef2f2', color: '#b91c1c' }}>
-                {formError}
-              </div>
-            )}
+            <ErrorAlert message={formError} onDismiss={() => setFormError('')} />
 
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
                 className="px-4 py-2 rounded-xl text-white text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
-                style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 {createMutation.isPending || updateMutation.isPending ? 'Speichern...' : 'Speichern'}
               </button>
               <button
                 type="button"
-                onClick={() => { setShowForm(false); setEditUser(null) }}
+                onClick={closeForm}
                 className="px-4 py-2 rounded-xl text-sm font-medium"
-                style={{ background: '#f4f4f0', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#6b6b63' }}
+                style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
               >
                 Abbrechen
               </button>
@@ -208,50 +221,34 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Delete Error */}
-      {deleteError && (
-        <div
-          className="flex items-center justify-between text-sm px-4 py-3 rounded-xl"
-          style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}
-        >
-          <span>{deleteError}</span>
-          <button
-            onClick={() => setDeleteError('')}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#b91c1c', fontSize: '16px', lineHeight: 1 }}
-            aria-label="Schließen"
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      <ErrorAlert message={deleteError} onDismiss={() => setDeleteError('')} />
 
-      {/* User List */}
       <div style={cardStyle}>
-        {isLoading && <p className="text-sm" style={{ color: '#9e9e96' }}>Lade Benutzer...</p>}
-        {error && <p className="text-sm" style={{ color: '#b91c1c' }}>Fehler beim Laden der Benutzer.</p>}
+        {isLoading && <p className="text-sm" style={{ color: 'var(--color-stone-600)' }}>Lade Benutzer...</p>}
+        {error && <p className="text-sm" style={{ color: 'var(--color-danger-700)' }}>Fehler beim Laden der Benutzer.</p>}
         {!isLoading && users.length === 0 && (
-          <p className="text-sm" style={{ color: '#9e9e96' }}>Keine Benutzer gefunden.</p>
+          <p className="text-sm" style={{ color: 'var(--color-stone-600)' }}>Keine Benutzer gefunden.</p>
         )}
         {users.length > 0 && (
           <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #e8e8e2' }}>
-                <th className="text-left pb-3 font-medium" style={{ color: '#9e9e96' }}>ID</th>
-                <th className="text-left pb-3 font-medium" style={{ color: '#9e9e96' }}>Benutzername</th>
-                <th className="text-left pb-3 font-medium" style={{ color: '#9e9e96' }}>Rolle</th>
-                <th className="text-right pb-3 font-medium" style={{ color: '#9e9e96' }}>Aktionen</th>
+              <tr style={{ borderBottom: '1px solid var(--color-stone-border)' }}>
+                <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>ID</th>
+                <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Benutzername</th>
+                <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Rolle</th>
+                <th className="text-right pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Aktionen</th>
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} style={{ borderBottom: '1px solid #f0f0ea' }}>
-                  <td className="py-3" style={{ color: '#b5b5a8' }}>#{user.id}</td>
+                <tr key={user.id} style={{ borderBottom: '1px solid var(--color-stone-row)' }}>
+                  <td className="py-3" style={{ color: 'var(--color-stone-500)' }}>#{user.id}</td>
                   <td className="py-3 font-medium">{user.username}</td>
                   <td className="py-3">
                     <span
                       className="px-2.5 py-1 rounded-full text-xs font-medium"
-                      style={ROLE_BADGE[user.role] ?? { bg: '#f4f4f0', color: '#6b6b63' }}
+                      style={ROLE_BADGE[user.role] ?? { background: 'var(--color-stone-100)', color: 'var(--color-stone-700)' }}
                     >
                       {user.role}
                     </span>
@@ -261,7 +258,7 @@ export default function AdminPage() {
                       <button
                         onClick={() => openEdit(user)}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                        style={{ background: '#f4f4f0', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#2d2d2d' }}
+                        style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-900)' }}
                       >
                         Bearbeiten
                       </button>
@@ -271,14 +268,14 @@ export default function AdminPage() {
                             onClick={() => deleteMutation.mutate(user.id)}
                             disabled={deleteMutation.isPending}
                             className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                            style={{ background: '#fee2e2', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#b91c1c' }}
+                            style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
                           >
                             Bestätigen
                           </button>
                           <button
                             onClick={() => setDeleteConfirm(null)}
                             className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                            style={{ background: '#f4f4f0', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#6b6b63' }}
+                            style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
                           >
                             Abbrechen
                           </button>
@@ -287,7 +284,7 @@ export default function AdminPage() {
                         <button
                           onClick={() => setDeleteConfirm(user.id)}
                           className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                          style={{ background: '#fee2e2', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#b91c1c' }}
+                          style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
                         >
                           Löschen
                         </button>

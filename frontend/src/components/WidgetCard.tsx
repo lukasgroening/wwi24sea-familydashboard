@@ -11,9 +11,9 @@ export default function WidgetCard({ widget, className = '', style }: Props) {
   return (
     <div
       className={`rounded-2xl p-5 ${className}`}
-      style={{ background: '#ffffff', border: '1px solid #e8e8e2', ...style }}
+      style={{ background: 'white', border: '1px solid var(--color-stone-border)', ...style }}
     >
-      <div className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#b5b5a8' }}>
+      <div className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--color-stone-500)' }}>
         {widget.name}
       </div>
       <Component />

@@ -49,7 +49,22 @@ echo ""
 info "Final images will be stripped of all testing tools and source maps."
 
 # ==============================================================================
-# 1. ORCHESTRATION
+# 1. ENV SETUP
+# ==============================================================================
+header "ENV SETUP"
+
+if [ ! -f backend/.env ]; then
+    step "backend/.env not found — generating"
+    SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))" 2>/dev/null \
+        || openssl rand -hex 32)
+    echo "SECRET_KEY=${SECRET_KEY}" > backend/.env
+    ok "backend/.env created with a generated SECRET_KEY"
+else
+    ok "backend/.env already exists"
+fi
+
+# ==============================================================================
+# 2. ORCHESTRATION
 # ==============================================================================
 header "EXECUTION PHASE"
 

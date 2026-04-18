@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { X } from 'lucide-react'
 import type { GeoLocation } from '../../lib/weatherApi'
 
 interface Props {
@@ -44,10 +45,10 @@ export default function LocationSearch({ onSelect, onClose, searchCities }: Prop
   }
 
   return (
-    <div className="absolute inset-0 z-10 flex flex-col rounded-2xl p-4" style={{ background: '#7c9a7e' }}>
+    <div className="absolute inset-0 z-10 flex flex-col rounded-2xl p-4" style={{ background: 'var(--color-sage-500)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.6)' }}>
+        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'oklch(1 0 0 / 0.6)' }}>
           Standort wählen
         </span>
         <button
@@ -56,7 +57,7 @@ export default function LocationSearch({ onSelect, onClose, searchCities }: Prop
           style={{ background: 'none', border: 'none', fontFamily: 'inherit' }}
           aria-label="Schließen"
         >
-          ✕
+          <X size={16} />
         </button>
       </div>
 
@@ -70,8 +71,8 @@ export default function LocationSearch({ onSelect, onClose, searchCities }: Prop
           placeholder="Stadt suchen…"
           className="w-full rounded-lg px-3 py-2 text-sm outline-none"
           style={{
-            background: 'rgba(255,255,255,0.15)',
-            border: '1px solid rgba(255,255,255,0.2)',
+            background: 'oklch(1 0 0 / 0.15)',
+            border: '1px solid oklch(1 0 0 / 0.2)',
             color: 'white',
             fontFamily: 'inherit',
           }}
@@ -80,7 +81,7 @@ export default function LocationSearch({ onSelect, onClose, searchCities }: Prop
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <div
               className="w-3.5 h-3.5 border-2 rounded-full animate-spin"
-              style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }}
+              style={{ borderColor: 'oklch(1 0 0 / 0.3)', borderTopColor: 'white' }}
             />
           </div>
         )}
@@ -99,24 +100,24 @@ export default function LocationSearch({ onSelect, onClose, searchCities }: Prop
               border: 'none',
               fontFamily: 'inherit',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(1 0 0 / 0.12)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             <span className="font-medium">{loc.name}</span>
-            <span className="ml-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
+            <span className="ml-1" style={{ color: 'oklch(1 0 0 / 0.55)' }}>
               · {loc.country}
             </span>
           </button>
         ))}
 
         {query.trim().length >= 2 && !searching && results.length === 0 && (
-          <p className="text-xs px-3 py-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <p className="text-xs px-3 py-2" style={{ color: 'oklch(1 0 0 / 0.5)' }}>
             Keine Ergebnisse gefunden
           </p>
         )}
 
         {query.trim().length < 2 && (
-          <p className="text-xs px-3 py-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <p className="text-xs px-3 py-2" style={{ color: 'oklch(1 0 0 / 0.4)' }}>
             Mindestens 2 Zeichen eingeben…
           </p>
         )}

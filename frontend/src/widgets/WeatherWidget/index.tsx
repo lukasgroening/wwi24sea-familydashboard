@@ -1,16 +1,15 @@
 import { useState } from 'react'
+import { Settings, Wind, AlertTriangle } from 'lucide-react'
 import type { WidgetProps } from '../../types'
 import { useWeather } from './useWeather'
 import LocationSearch from './LocationSearch'
 import WeatherSettings from './WeatherSettings'
 import type { WeatherSettingsData } from './WeatherSettings'
 
-/** Convert Celsius to Fahrenheit */
 function toFahrenheit(celsius: number): number {
   return Math.round(celsius * 9 / 5 + 32)
 }
 
-/** Format temperature based on unit setting */
 function formatTemp(celsius: number, unit: string): string {
   if (unit === 'fahrenheit') return `${toFahrenheit(celsius)}`
   return `${Math.round(celsius)}`
@@ -20,7 +19,6 @@ export default function WeatherWidget({
   settings,
   onSettingsChange,
 }: WidgetProps & { onSettingsChange?: (s: Record<string, unknown>) => void }) {
-  // Parse settings with defaults
   const weatherSettings: WeatherSettingsData = {
     locationName: (settings?.locationName as string) ?? 'Frankfurt am Main',
     locationCountry: (settings?.locationCountry as string) ?? 'DE',
@@ -34,7 +32,6 @@ export default function WeatherWidget({
   const unit = weatherSettings.temperatureUnit
   const unitSuffix = unit === 'fahrenheit' ? '°F' : '°C'
 
-  /** Handle location change from inline search — persists via settings */
   function handleLocationSelect(geo: { name: string; country: string }) {
     if (onSettingsChange) {
       onSettingsChange({
@@ -46,7 +43,6 @@ export default function WeatherWidget({
     setShowSearch(false)
   }
 
-  /* ── Loading state ──────────────────────────────── */
   if (loading && !weather) {
     return (
       <div className="h-full flex flex-col items-center justify-center" style={{ color: 'white' }}>
@@ -59,11 +55,10 @@ export default function WeatherWidget({
     )
   }
 
-  /* ── Error state ────────────────────────────────── */
   if (error && !weather) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-center px-2" style={{ color: 'white' }}>
-        <span className="text-2xl mb-2">⚠️</span>
+        <AlertTriangle size={24} className="mb-2" />
         <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>{error}</p>
         <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
           Backend erreichbar?
@@ -74,10 +69,8 @@ export default function WeatherWidget({
 
   if (!weather) return null
 
-  /* ── Main widget ────────────────────────────────── */
   return (
     <div className="h-full flex flex-col relative" style={{ color: 'white' }}>
-      {/* Location search overlay */}
       {showSearch && (
         <LocationSearch
           onSelect={handleLocationSelect}
@@ -86,7 +79,6 @@ export default function WeatherWidget({
         />
       )}
 
-      {/* City header — clickable to change location */}
       <div className="flex items-center justify-between mb-3">
         <button
           onClick={() => setShowSearch(true)}
@@ -98,18 +90,16 @@ export default function WeatherWidget({
             <path d="M2 4L5 7L8 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        {/* Settings gear */}
         <button
           onClick={() => setShowSettings(true)}
-          className="w-6 h-6 rounded-lg text-sm flex items-center justify-center flex-shrink-0"
+          className="w-6 h-6 rounded-lg text-sm flex items-center justify-center shrink-0"
           style={{ background: 'rgba(255,255,255,0.15)', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)' }}
           title="Einstellungen"
         >
-          ⚙
+          <Settings size={14} />
         </button>
       </div>
 
-      {/* Current temperature + weather */}
       <div className="flex items-start justify-between">
         <div>
           <div className="text-5xl font-light tracking-tight leading-none mb-1">
@@ -121,15 +111,14 @@ export default function WeatherWidget({
         </div>
       </div>
 
-      {/* Wind info */}
       <div className="flex gap-3 mt-auto pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.15)' }}>
-        <div className="text-xs" style={{ color: 'rgba(255,255,255,0.75)' }}>
-          💨 {weather.windspeed} km/h
+        <div className="text-xs flex items-center gap-1" style={{ color: 'rgba(255,255,255,0.75)' }}>
+          <Wind size={12} />
+          {weather.windspeed} km/h
           <span className="block" style={{ color: 'rgba(255,255,255,0.5)' }}>Wind</span>
         </div>
       </div>
 
-      {/* Settings Modal */}
       {showSettings && (
         <WeatherSettings
           settings={weatherSettings}
