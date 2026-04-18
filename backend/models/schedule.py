@@ -15,16 +15,19 @@ class DayOfWeek(str, Enum):
     SONNTAG = "Sonntag"
 
 
-class ScheduleEntry(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+class ScheduleEntryBase(SQLModel):
     subject: str
-    day_of_week: str = Field(default=DayOfWeek.MONTAG)
+    day_of_week: DayOfWeek = Field(default=DayOfWeek.MONTAG)
     start_time: time
     end_time: time
     room: Optional[str] = Field(default=None)
     teacher: Optional[str] = Field(default=None)
-
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+
+
+class ScheduleEntry(ScheduleEntryBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    family_id: Optional[int] = Field(default=None, foreign_key="family.id")
 
 
 class ScheduleEntryCreate(BaseModel):
@@ -37,15 +40,9 @@ class ScheduleEntryCreate(BaseModel):
     user_id: Optional[int] = None
 
 
-class ScheduleEntryPublic(BaseModel):
+class ScheduleEntryPublic(ScheduleEntryBase):
     id: int
-    subject: str
-    day_of_week: DayOfWeek
-    start_time: time
-    end_time: time
-    room: Optional[str]
-    teacher: Optional[str]
-    user_id: Optional[int]
+    family_id: int
 
 
 class ScheduleEntryUpdate(BaseModel):

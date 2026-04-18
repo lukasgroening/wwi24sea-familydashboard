@@ -1,8 +1,11 @@
 import requests
+import logging
 from icalendar import Calendar
 from datetime import datetime, timedelta, date, timezone
 from typing import List
 from models.calendar import CalendarEventPublic, CalendarSource
+
+logger = logging.getLogger(__name__)
 
 def fetch_external_events(source: CalendarSource) -> List[CalendarEventPublic]:
     """
@@ -52,6 +55,6 @@ def fetch_external_events(source: CalendarSource) -> List[CalendarEventPublic]:
                     source_name=source.name
                 ))
     except Exception as e:
-        print(f"Error fetching calendar source '{source.name}': {e}")
+        logger.error(f"Error fetching calendar source '{source.name}' from {source.url}: {e}")
     
     return events
