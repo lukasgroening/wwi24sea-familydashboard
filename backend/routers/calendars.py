@@ -27,16 +27,7 @@ def get_all_events(session: Session = Depends(get_session)):
 
     db_events = session.exec(select(CalendarEvent)).all()
     for e in db_events:
-        all_events.append(CalendarEventPublic(
-            id=e.id,
-            title=e.title,
-            description=e.description,
-            start_time=e.start_time,
-            end_time=e.end_time,
-            location=e.location,
-            color=e.color,
-            is_external=False
-        ))
+        all_events.append(CalendarEventPublic(**e.model_dump(), is_external=False))
 
     active_sources = session.exec(select(CalendarSource).where(CalendarSource.active)).all()
     for source in active_sources:
@@ -61,16 +52,7 @@ def create_local_event(
     session.commit()
     session.refresh(db_event)
     
-    return CalendarEventPublic(
-        id=db_event.id,
-        title=db_event.title,
-        description=db_event.description,
-        start_time=db_event.start_time,
-        end_time=db_event.end_time,
-        location=db_event.location,
-        color=db_event.color,
-        is_external=False
-    )
+    return CalendarEventPublic(**db_event.model_dump(), is_external=False)
 
 @router.delete("/events/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_local_event(event_id: int, session: Session = Depends(get_session)):

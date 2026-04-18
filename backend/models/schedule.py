@@ -18,7 +18,7 @@ class DayOfWeek(str, Enum):
 class ScheduleEntry(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     subject: str
-    day_of_week: str = Field(default=DayOfWeek.MONTAG)
+    day_of_week: DayOfWeek = Field(default=DayOfWeek.MONTAG)
     start_time: time
     end_time: time
     room: Optional[str] = Field(default=None)

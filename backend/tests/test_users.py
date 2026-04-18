@@ -62,3 +62,17 @@ def test_delete_last_admin_forbidden(client, admin_user, test_user):
     # Note: Hits self-delete protection first in this test state.
     response = client.delete(f"/api/users/{admin_user.id}", headers=headers)
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+def test_update_user_duplicate_username(client, admin_user, test_user):
+    """
+    Test that updating a user to an existing username fails gracefully.
+    """
+    token = create_access_token(data={"sub": admin_user.username, "role": admin_user.role})
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # Try to update test_user's username to admin_user's username
+    payload = {"username": admin_user.username}
+    response = client.patch(f"/api/users/{test_user.id}", json=payload, headers=headers)
+    
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "bereits vergeben" in response.json()["detail"]
