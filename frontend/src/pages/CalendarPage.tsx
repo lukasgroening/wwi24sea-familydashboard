@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { X } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { useAuthStore } from '../store/authStore'
+import ErrorAlert from '../components/ErrorAlert'
 
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
@@ -29,11 +31,11 @@ interface NewEventForm {
 }
 
 const COLOR_OPTIONS = [
-  { label: 'Grün', value: '#7c9a7e' },
-  { label: 'Hellgrün', value: '#a8c4a8' },
-  { label: 'Sand', value: '#c4a882' },
-  { label: 'Blau', value: '#82a4c4' },
-  { label: 'Lila', value: '#a882c4' },
+  { label: 'Grün',     value: 'oklch(0.655 0.053 146.8)' },
+  { label: 'Hellgrün', value: 'oklch(0.792 0.049 145.2)' },
+  { label: 'Sand',     value: 'oklch(0.747 0.061 75.1)'  },
+  { label: 'Blau',     value: 'oklch(0.705 0.060 247.1)' },
+  { label: 'Lila',     value: 'oklch(0.667 0.104 310.1)' },
 ]
 
 function getDaysInMonth(year: number, month: number) {
@@ -51,12 +53,12 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '9px 13px',
   borderRadius: '10px',
-  border: '1px solid #e8e8e2',
-  background: '#f8f8f4',
+  border: '1px solid var(--color-stone-border)',
+  background: 'var(--color-stone-50)',
   fontFamily: 'inherit',
   fontSize: '14px',
   outline: 'none',
-  color: '#2d2d2d',
+  color: 'var(--color-stone-900)',
   boxSizing: 'border-box',
 }
 
@@ -74,7 +76,7 @@ export default function CalendarPage() {
     start_time: toLocalDatetimeInput(today),
     end_time: toLocalDatetimeInput(new Date(today.getTime() + 60 * 60 * 1000)),
     location: '',
-    color: '#7c9a7e',
+    color: COLOR_OPTIONS[0].value,
   })
   const [formError, setFormError] = useState('')
 
@@ -98,7 +100,7 @@ export default function CalendarPage() {
         start_time: toLocalDatetimeInput(today),
         end_time: toLocalDatetimeInput(new Date(today.getTime() + 60 * 60 * 1000)),
         location: '',
-        color: '#7c9a7e',
+        color: COLOR_OPTIONS[0].value,
       })
     },
     onError: () => setFormError('Fehler beim Erstellen des Termins.'),
@@ -112,7 +114,6 @@ export default function CalendarPage() {
     },
   })
 
-  // Calendar grid
   const daysInMonth = getDaysInMonth(view.year, view.month)
   const firstDay = getFirstDayOfMonth(view.year, view.month)
   const daysInPrev = getDaysInMonth(view.year, view.month - 1)
@@ -122,7 +123,6 @@ export default function CalendarPage() {
   for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, current: true })
   while (cells.length % 7 !== 0) cells.push({ day: cells.length - daysInMonth - firstDay + 1, current: false })
 
-  // Events per day in current month
   const eventsByDay: Record<number, CalendarEvent[]> = {}
   events.forEach((ev) => {
     const d = new Date(ev.start_time)
@@ -133,7 +133,6 @@ export default function CalendarPage() {
     }
   })
 
-  // Events for selected day or upcoming
   const selectedEvents = selectedDay !== null
     ? (eventsByDay[selectedDay] ?? []).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
     : [...events]
@@ -159,13 +158,13 @@ export default function CalendarPage() {
       start_time: toLocalDatetimeInput(base),
       end_time: toLocalDatetimeInput(new Date(base.getTime() + 60 * 60 * 1000)),
       location: '',
-      color: '#7c9a7e',
+      color: COLOR_OPTIONS[0].value,
     })
     setFormError('')
     setShowModal(true)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit: React.ComponentProps<'form'>['onSubmit'] = (e) => {
     e.preventDefault()
     if (!form.title.trim()) { setFormError('Titel ist erforderlich.'); return }
     if (form.end_time <= form.start_time) { setFormError('Endzeit muss nach der Startzeit liegen.'); return }
@@ -193,13 +192,13 @@ export default function CalendarPage() {
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-semibold">Kalender</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#9e9e96' }}>Familientermine auf einen Blick</p>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--color-stone-600)' }}>Familientermine auf einen Blick</p>
         </div>
         {isAdmin && (
           <button
             onClick={openCreateModal}
             className="px-4 py-2 rounded-xl text-white text-sm font-medium"
-            style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
           >
             + Termin hinzufügen
           </button>
@@ -210,32 +209,31 @@ export default function CalendarPage() {
         {/* Calendar grid */}
         <div
           className="rounded-2xl p-6 flex-shrink-0"
-          style={{ background: '#ffffff', border: '1px solid #e8e8e2', width: '100%', maxWidth: '480px' }}
+          style={{ background: 'white', border: '1px solid var(--color-stone-border)', width: '100%', maxWidth: '480px' }}
         >
-          {/* Month navigation */}
           <div className="flex items-center justify-between mb-5">
             <span className="font-semibold text-base">{MONTHS[view.month]} {view.year}</span>
             <div className="flex gap-1">
               <button
                 onClick={prev}
                 className="w-8 h-8 rounded-lg text-sm flex items-center justify-center"
-                style={{ border: '1px solid #e8e8e2', background: 'none', cursor: 'pointer', color: '#7a7a72' }}
+                style={{ border: '1px solid var(--color-stone-border)', background: 'none', cursor: 'pointer', color: 'var(--color-stone-700)' }}
               >‹</button>
               <button
                 onClick={next}
                 className="w-8 h-8 rounded-lg text-sm flex items-center justify-center"
-                style={{ border: '1px solid #e8e8e2', background: 'none', cursor: 'pointer', color: '#7a7a72' }}
+                style={{ border: '1px solid var(--color-stone-border)', background: 'none', cursor: 'pointer', color: 'var(--color-stone-700)' }}
               >›</button>
             </div>
           </div>
 
-          {isLoading && <p className="text-sm text-center py-8" style={{ color: '#b5b5a8' }}>Lade Termine…</p>}
-          {error && <p className="text-sm text-center py-8" style={{ color: '#b91c1c' }}>Fehler beim Laden.</p>}
+          {isLoading && <p className="text-sm text-center py-8" style={{ color: 'var(--color-stone-500)' }}>Lade Termine…</p>}
+          {error && <p className="text-sm text-center py-8" style={{ color: 'var(--color-danger-700)' }}>Fehler beim Laden.</p>}
 
           {!isLoading && (
             <div className="grid grid-cols-7 gap-1">
               {DAYS.map((d) => (
-                <div key={d} className="text-center text-xs font-semibold py-1" style={{ color: '#b5b5a8' }}>
+                <div key={d} className="text-center text-xs font-semibold py-1" style={{ color: 'var(--color-stone-500)' }}>
                   {d}
                 </div>
               ))}
@@ -249,11 +247,11 @@ export default function CalendarPage() {
                     onClick={() => handleDayClick(cell.day, cell.current)}
                     className="flex flex-col items-center py-1.5 rounded-lg text-xs transition-colors"
                     style={{
-                      background: today_ ? '#7c9a7e' : isSelected ? '#f0f5f0' : 'transparent',
-                      color: today_ ? 'white' : cell.current ? '#4a4a44' : '#c8c8c0',
+                      background: today_ ? 'var(--color-sage-500)' : isSelected ? 'var(--color-sage-50)' : 'transparent',
+                      color: today_ ? 'white' : cell.current ? 'var(--color-stone-800)' : 'var(--color-stone-dim)',
                       fontWeight: today_ || isSelected ? 500 : 400,
                       cursor: cell.current ? 'pointer' : 'default',
-                      border: isSelected && !today_ ? '1px solid #7c9a7e' : '1px solid transparent',
+                      border: isSelected && !today_ ? '1px solid var(--color-sage-500)' : '1px solid transparent',
                     }}
                   >
                     {cell.day}
@@ -263,7 +261,7 @@ export default function CalendarPage() {
                           <div
                             key={j}
                             className="w-1 h-1 rounded-full"
-                            style={{ background: today_ ? 'rgba(255,255,255,0.7)' : (ev.color ?? '#7c9a7e') }}
+                            style={{ background: today_ ? 'oklch(1 0 0 / 0.7)' : (ev.color ?? 'var(--color-sage-500)') }}
                           />
                         ))}
                       </div>
@@ -277,7 +275,7 @@ export default function CalendarPage() {
 
         {/* Event list */}
         <div className="flex-1 flex flex-col gap-3">
-          <div className="text-sm font-semibold" style={{ color: '#2d2d2d' }}>
+          <div className="text-sm font-semibold" style={{ color: 'var(--color-stone-900)' }}>
             {selectedDay !== null
               ? `${selectedDay}. ${MONTHS[view.month]} ${view.year}`
               : 'Nächste Termine'}
@@ -286,14 +284,14 @@ export default function CalendarPage() {
           {selectedDay !== null && selectedEvents.length === 0 && (
             <div
               className="rounded-2xl p-6 text-center"
-              style={{ background: '#ffffff', border: '1px solid #e8e8e2' }}
+              style={{ background: 'white', border: '1px solid var(--color-stone-border)' }}
             >
-              <p className="text-sm" style={{ color: '#b5b5a8' }}>Keine Termine an diesem Tag.</p>
+              <p className="text-sm" style={{ color: 'var(--color-stone-500)' }}>Keine Termine an diesem Tag.</p>
               {isAdmin && (
                 <button
                   onClick={openCreateModal}
                   className="mt-3 px-4 py-2 rounded-xl text-sm font-medium text-white"
-                  style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   Termin hinzufügen
                 </button>
@@ -305,17 +303,17 @@ export default function CalendarPage() {
             <div
               key={ev.id ?? i}
               className="rounded-2xl p-4 flex gap-3"
-              style={{ background: '#ffffff', border: '1px solid #e8e8e2' }}
+              style={{ background: 'white', border: '1px solid var(--color-stone-border)' }}
             >
               <div
                 className="w-1 rounded-full flex-shrink-0 self-stretch"
-                style={{ background: ev.color ?? '#7c9a7e', minHeight: '40px' }}
+                style={{ background: ev.color ?? 'var(--color-sage-500)', minHeight: '40px' }}
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="text-sm font-medium">{ev.title}</div>
-                    <div className="text-xs mt-0.5" style={{ color: '#9e9e96' }}>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--color-stone-600)' }}>
                       {new Date(ev.start_time).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}
                       {' · '}
                       {new Date(ev.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
@@ -323,10 +321,10 @@ export default function CalendarPage() {
                       {new Date(ev.end_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                     {ev.location && (
-                      <div className="text-xs mt-0.5" style={{ color: '#b5b5a8' }}>📍 {ev.location}</div>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--color-stone-500)' }}>📍 {ev.location}</div>
                     )}
                     {ev.description && (
-                      <div className="text-xs mt-1" style={{ color: '#9e9e96' }}>{ev.description}</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--color-stone-600)' }}>{ev.description}</div>
                     )}
                   </div>
                   {isAdmin && !ev.is_external && ev.id !== null && (
@@ -336,14 +334,14 @@ export default function CalendarPage() {
                           onClick={() => deleteMutation.mutate(ev.id!)}
                           disabled={deleteMutation.isPending}
                           className="px-2 py-1 rounded-lg text-xs font-medium"
-                          style={{ background: '#fee2e2', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#b91c1c' }}
+                          style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
                         >
                           Löschen
                         </button>
                         <button
                           onClick={() => setDeleteConfirm(null)}
                           className="px-2 py-1 rounded-lg text-xs font-medium"
-                          style={{ background: '#f4f4f0', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#6b6b63' }}
+                          style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
                         >
                           Abbruch
                         </button>
@@ -352,16 +350,16 @@ export default function CalendarPage() {
                       <button
                         onClick={() => setDeleteConfirm(ev.id)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center text-xs flex-shrink-0"
-                        style={{ background: '#fef2f2', border: 'none', cursor: 'pointer', color: '#c45c5c' }}
+                        style={{ background: 'var(--color-danger-50)', border: 'none', cursor: 'pointer', color: 'var(--color-danger-500)' }}
                         title="Termin löschen"
                       >
-                        ✕
+                        <X size={12} />
                       </button>
                     )
                   )}
                 </div>
                 {ev.is_external && ev.source_name && (
-                  <span className="mt-1 inline-block px-2 py-0.5 rounded text-xs" style={{ background: '#f4f4f0', color: '#9e9e96' }}>
+                  <span className="mt-1 inline-block px-2 py-0.5 rounded text-xs" style={{ background: 'var(--color-stone-100)', color: 'var(--color-stone-600)' }}>
                     Extern · {ev.source_name}
                   </span>
                 )}
@@ -374,16 +372,16 @@ export default function CalendarPage() {
       {/* Create Event Modal */}
       {showModal && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}
+          style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}
         >
           <div
             className="rounded-2xl p-6 flex flex-col gap-4 w-full"
-            style={{ background: '#ffffff', border: '1px solid #e8e8e2', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', maxWidth: '480px' }}
+            style={{ background: 'white', border: '1px solid var(--color-stone-border)', boxShadow: '0 8px 32px oklch(0 0 0 / 0.12)', maxWidth: '480px' }}
           >
             <div>
               <div className="text-base font-semibold">Neuer Termin</div>
-              <div className="text-xs mt-0.5" style={{ color: '#9e9e96' }}>Termin für alle Familienmitglieder</div>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--color-stone-600)' }}>Termin für alle Familienmitglieder</div>
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -452,7 +450,7 @@ export default function CalendarPage() {
                       className="w-7 h-7 rounded-full transition-transform"
                       style={{
                         background: c.value,
-                        border: form.color === c.value ? '2px solid #2d2d2d' : '2px solid transparent',
+                        border: form.color === c.value ? '2px solid var(--color-stone-900)' : '2px solid transparent',
                         cursor: 'pointer',
                         transform: form.color === c.value ? 'scale(1.2)' : 'scale(1)',
                       }}
@@ -462,18 +460,14 @@ export default function CalendarPage() {
                 </div>
               </div>
 
-              {formError && (
-                <div className="text-sm px-3 py-2 rounded-lg" style={{ background: '#fef2f2', color: '#b91c1c' }}>
-                  {formError}
-                </div>
-              )}
+              <ErrorAlert message={formError} />
 
               <div className="flex gap-2 pt-1">
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
                   className="px-4 py-2 rounded-xl text-white text-sm font-medium disabled:opacity-60"
-                  style={{ background: '#7c9a7e', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   {createMutation.isPending ? 'Speichern…' : 'Speichern'}
                 </button>
@@ -481,7 +475,7 @@ export default function CalendarPage() {
                   type="button"
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 rounded-xl text-sm font-medium"
-                  style={{ background: '#f4f4f0', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#6b6b63' }}
+                  style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
                 >
                   Abbrechen
                 </button>

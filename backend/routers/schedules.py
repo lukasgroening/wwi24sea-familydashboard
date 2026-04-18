@@ -4,7 +4,7 @@ from typing import List
 
 from database import get_session
 from models.schedule import ScheduleEntry, ScheduleEntryCreate, ScheduleEntryPublic, ScheduleEntryUpdate
-from models.user import User
+from models.user import Role, User
 from dependencies import get_current_user
 
 router = APIRouter(
@@ -32,8 +32,16 @@ def create_schedule_entry(entry_in: ScheduleEntryCreate, session: Session = Depe
 
 
 @router.get("/", response_model=List[ScheduleEntryPublic])
-def get_schedule_entries(session: Session = Depends(get_session)):
-    entries = session.exec(select(ScheduleEntry)).all()
+def get_schedule_entries(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    if current_user.role in (Role.SYSTEM_ADMIN, Role.FAMILY_ADMIN):
+        entries = session.exec(select(ScheduleEntry)).all()
+    else:
+        entries = session.exec(
+            select(ScheduleEntry).where(ScheduleEntry.user_id == current_user.id)
+        ).all()
     return entries
 
 
