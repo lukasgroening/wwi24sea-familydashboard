@@ -14,7 +14,7 @@ class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str = Field(unique=True, index=True)
     hashed_password: str
-    role: str = Field(default=Role.USER)
+    role: Role = Field(default=Role.USER)
     family_id: Optional[int] = Field(default=None, foreign_key="family.id")
 
 

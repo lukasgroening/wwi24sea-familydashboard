@@ -7,7 +7,11 @@ from dependencies import get_current_user
 from models.user import User
 from models.widget import WidgetConfig, WidgetCreate, WidgetResponse
 
-router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
+router = APIRouter(
+    prefix="/api/dashboard",
+    tags=["Dashboard"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("/widgets", response_model=List[WidgetResponse])

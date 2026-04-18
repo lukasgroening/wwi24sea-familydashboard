@@ -6,6 +6,7 @@ from sqlmodel.pool import StaticPool
 from main import app
 from database import get_session
 from models.user import Role, User
+from models.family import Family
 from auth import get_password_hash
 
 # Create a separate engine for testing
@@ -36,12 +37,22 @@ def client_fixture(session: Session):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(name="test_family")
+def test_family_fixture(session: Session):
+    family = Family(name="Test Family")
+    session.add(family)
+    session.commit()
+    session.refresh(family)
+    return family
+
+
 @pytest.fixture(name="test_user")
-def test_user_fixture(session: Session):
+def test_user_fixture(session: Session, test_family: Family):
     user = User(
         username="testuser",
         hashed_password=get_password_hash("testpassword"),
         role=Role.USER,
+        family_id=test_family.id,
     )
     session.add(user)
     session.commit()
@@ -50,11 +61,12 @@ def test_user_fixture(session: Session):
 
 
 @pytest.fixture(name="admin_user")
-def admin_user_fixture(session: Session):
+def admin_user_fixture(session: Session, test_family: Family):
     user = User(
         username="adminuser",
         hashed_password=get_password_hash("adminpassword"),
         role=Role.FAMILY_ADMIN,
+        family_id=test_family.id,
     )
     session.add(user)
     session.commit()

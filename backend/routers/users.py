@@ -114,6 +114,16 @@ def update_user(
     if user_update.role is not None and user_update.role == Role.USER:
         _check_last_admin(session, user, "zu einem normalen Nutzer degradiert")
 
+    if user_update.username is not None and user_update.username != user.username:
+        existing_user = session.exec(
+            select(User).where(User.username == user_update.username)
+        ).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Benutzername ist bereits vergeben.",
+            )
+
     update_data = user_update.model_dump(exclude_unset=True)
 
     if "password" in update_data:

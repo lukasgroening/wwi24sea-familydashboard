@@ -19,26 +19,29 @@ router = APIRouter(
 # --- EVENTS ---
 
 @router.get("/events", response_model=List[CalendarEventPublic])
-def get_all_events(session: Session = Depends(get_session)):
+def get_all_events(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """
-    Returns a merged list of local database events and external events from all active sources.
+    Returns a merged list of local database events and external events from all active sources for the user's family.
     """
     all_events: List[CalendarEventPublic] = []
 
-    db_events = session.exec(select(CalendarEvent)).all()
+    # Lokale Events der eigenen Familie abrufen
+    db_events = session.exec(
+        select(CalendarEvent).where(CalendarEvent.family_id == current_user.family_id)
+    ).all()
     for e in db_events:
-        all_events.append(CalendarEventPublic(
-            id=e.id,
-            title=e.title,
-            description=e.description,
-            start_time=e.start_time,
-            end_time=e.end_time,
-            location=e.location,
-            color=e.color,
-            is_external=False
-        ))
+        all_events.append(CalendarEventPublic(**e.model_dump(), is_external=False))
 
-    active_sources = session.exec(select(CalendarSource).where(CalendarSource.active)).all()
+    # Externe Quellen der eigenen Familie abrufen
+    active_sources = session.exec(
+        select(CalendarSource).where(
+            (CalendarSource.active) & (CalendarSource.family_id == current_user.family_id)
+        )
+    ).all()
+    
     for source in active_sources:
         external_events = fetch_external_events(source)
         all_events.extend(external_events)
@@ -53,29 +56,27 @@ def create_local_event(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    db_event = CalendarEvent(**event_in.model_dump())
-    if db_event.user_id is None:
-        db_event.user_id = current_user.id
+    db_event = CalendarEvent(
+        **event_in.model_dump(),
+        user_id=current_user.id,
+        family_id=current_user.family_id
+    )
         
     session.add(db_event)
     session.commit()
     session.refresh(db_event)
     
-    return CalendarEventPublic(
-        id=db_event.id,
-        title=db_event.title,
-        description=db_event.description,
-        start_time=db_event.start_time,
-        end_time=db_event.end_time,
-        location=db_event.location,
-        color=db_event.color,
-        is_external=False
-    )
+    return CalendarEventPublic(**db_event.model_dump(), is_external=False)
 
 @router.delete("/events/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_local_event(event_id: int, session: Session = Depends(get_session)):
+def delete_local_event(
+    event_id: int, 
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     db_event = session.get(CalendarEvent, event_id)
-    if not db_event:
+    # Nur Events der eigenen Familie löschen
+    if not db_event or db_event.family_id != current_user.family_id:
         raise HTTPException(status_code=404, detail="Event nicht gefunden.")
     
     session.delete(db_event)
@@ -85,21 +86,39 @@ def delete_local_event(event_id: int, session: Session = Depends(get_session)):
 # --- SOURCES (External Calendars) ---
 
 @router.get("/sources", response_model=List[CalendarSourcePublic])
-def get_calendar_sources(session: Session = Depends(get_session)):
-    return session.exec(select(CalendarSource)).all()
+def get_calendar_sources(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    # Nur Quellen der eigenen Familie abrufen
+    return session.exec(
+        select(CalendarSource).where(CalendarSource.family_id == current_user.family_id)
+    ).all()
 
 @router.post("/sources", response_model=CalendarSourcePublic)
-def add_calendar_source(source_in: CalendarSourceCreate, session: Session = Depends(get_session)):
-    db_source = CalendarSource(**source_in.model_dump())
+def add_calendar_source(
+    source_in: CalendarSourceCreate, 
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    db_source = CalendarSource(
+        **source_in.model_dump(),
+        family_id=current_user.family_id
+    )
     session.add(db_source)
     session.commit()
     session.refresh(db_source)
     return db_source
 
 @router.delete("/sources/{source_id}", status_code=status.HTTP_204_NO_CONTENT)
-def remove_calendar_source(source_id: int, session: Session = Depends(get_session)):
+def remove_calendar_source(
+    source_id: int, 
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     db_source = session.get(CalendarSource, source_id)
-    if not db_source:
+    # Nur Quellen der eigenen Familie löschen
+    if not db_source or db_source.family_id != current_user.family_id:
         raise HTTPException(status_code=404, detail="Quelle nicht gefunden.")
     
     session.delete(db_source)
