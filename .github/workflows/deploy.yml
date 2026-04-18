@@ -17,6 +17,6 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/user05/dashboard
+            cd /home/users/user05/dashboard
             git pull
             HOST=${{ secrets.SSH_HOST }} ./build.sh
