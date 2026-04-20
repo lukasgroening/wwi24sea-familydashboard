@@ -32,7 +32,7 @@ def create_seed_data():
         existing_family = session.exec(select(Family)).first()
         if not existing_family:
             print("Erstelle Demo-Familie...")
-            demo_family = Family(name="Familie Demo")
+            demo_family = Family(name="Familie Demo", join_code="DEMO12345678")
             session.add(demo_family)
             session.commit()
             session.refresh(demo_family)

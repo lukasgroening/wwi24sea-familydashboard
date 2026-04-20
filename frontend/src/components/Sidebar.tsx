@@ -1,10 +1,11 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, CalendarDays, GraduationCap, Users, Settings, Home, X, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, GraduationCap, Users, Settings, Home, X, UserPlus, type LucideIcon } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 
 interface SidebarProps {
   isOpen: boolean
   onClose: () => void
+  onInviteClick: () => void
 }
 
 const navItems: { label: string; to: string; icon: LucideIcon }[] = [
@@ -21,7 +22,7 @@ const systemAdminItems: { label: string; to: string; icon: LucideIcon }[] = [
   { label: 'System', to: '/admin/system', icon: Settings },
 ]
 
-export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, onInviteClick }: SidebarProps) {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
 
@@ -56,6 +57,27 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       </div>
 
       <nav className="flex flex-col gap-0.5 flex-1">
+        {user?.family_name && (
+          <div className="mb-6 px-2">
+            <div className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-stone-50)' }}>
+              Familie
+            </div>
+            <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/50 border border-stone-300">
+              <span className="text-sm font-semibold truncate">{user.family_name}</span>
+              {user.join_code && (
+                <button
+                  onClick={onInviteClick}
+                  className="p-1.5 rounded-lg hover:bg-white transition-colors text-sage-600"
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
+                  title="Einladen"
+                >
+                  <UserPlus size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="text-xs font-semibold uppercase tracking-widest px-2 mb-1" style={{ color: 'var(--color-stone-500)' }}>
           Übersicht
         </div>

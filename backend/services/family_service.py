@@ -1,8 +1,16 @@
+import secrets
+import string
 from sqlmodel import Session, select
 from typing import List
 from fastapi import HTTPException, status
 from models.family import Family, FamilyCreate, FamilyPublic
 from models.user import User
+
+
+def generate_join_code(length: int = 12) -> str:
+    """Generiert einen zufälligen, sicheren Join-Code."""
+    alphabet = string.ascii_uppercase + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 def get_all_families(session: Session) -> List[FamilyPublic]:
@@ -11,11 +19,17 @@ def get_all_families(session: Session) -> List[FamilyPublic]:
     result = []
     for f in families:
         count = len(session.exec(select(User).where(User.family_id == f.id)).all())
-        result.append(FamilyPublic(id=f.id, name=f.name, member_count=count))
+        result.append(
+            FamilyPublic(
+                id=f.id, name=f.name, join_code=f.join_code, member_count=count
+            )
+        )
     return result
 
 
-def create_family(session: Session, family_in: FamilyCreate) -> FamilyPublic:
+def create_family(
+    session: Session, family_in: FamilyCreate, allow_commit: bool = True
+) -> Family:
     """Erstellt eine neue Familie und prüft auf Namensduplikate."""
     existing = session.exec(select(Family).where(Family.name == family_in.name)).first()
     if existing:
@@ -24,12 +38,22 @@ def create_family(session: Session, family_in: FamilyCreate) -> FamilyPublic:
             detail="Eine Familie mit diesem Namen existiert bereits.",
         )
 
-    db_family = Family(name=family_in.name)
-    session.add(db_family)
-    session.commit()
-    session.refresh(db_family)
+    # Sicherstellen, dass der join_code eindeutig ist
+    while True:
+        join_code = generate_join_code()
+        if not session.exec(
+            select(Family).where(Family.join_code == join_code)
+        ).first():
+            break
 
-    return FamilyPublic(id=db_family.id, name=db_family.name, member_count=0)
+    db_family = Family(name=family_in.name, join_code=join_code)
+    session.add(db_family)
+
+    if allow_commit:
+        session.commit()
+        session.refresh(db_family)
+
+    return db_family
 
 
 def delete_family(session: Session, family_id: int) -> None:

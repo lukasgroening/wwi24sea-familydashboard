@@ -1,8 +1,10 @@
 from sqlmodel import Session, select
 from typing import List, Optional
 from fastapi import HTTPException, status
-from models.user import User, UserCreate, UserUpdate, Role
+from models.user import User, UserCreate, UserPublic, UserUpdate, UserRegister, Role
+from models.family import Family, FamilyCreate
 from auth import get_password_hash
+from services import family_service
 
 
 def get_available_roles() -> List[str]:
@@ -151,3 +153,70 @@ def delete_user(session: Session, user_id: int, current_user: User) -> None:
 
     session.delete(user)
     session.commit()
+
+
+def register_user(session: Session, user_in: UserRegister) -> User:
+    """Registriert einen neuen Benutzer und erstellt ggf. eine neue Familie."""
+    _check_username_exists(session, user_in.username)
+
+    if not user_in.join_code and not user_in.family_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bitte geben Sie entweder einen Join-Code an oder erstellen Sie eine neue Familie.",
+        )
+
+    if user_in.join_code and user_in.family_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bitte geben Sie entweder einen Join-Code an ODER einen Familiennamen, nicht beides.",
+        )
+
+    role = Role.USER
+    family_id = None
+
+    if user_in.family_name:
+        # Neue Familie vorbereiten (ohne commit)
+        new_family = family_service.create_family(
+            session, FamilyCreate(name=user_in.family_name), allow_commit=False
+        )
+        session.flush()  # Weist die ID zu, ohne zu committen
+        family_id = new_family.id
+        role = Role.FAMILY_ADMIN
+    else:
+        # Bestehender Familie beitreten
+        family = session.exec(
+            select(Family).where(Family.join_code == user_in.join_code)
+        ).first()
+        if not family:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Der angegebene Join-Code ist ungültig.",
+            )
+        family_id = family.id
+
+    hashed_password = get_password_hash(user_in.password)
+    new_user = User(
+        username=user_in.username,
+        hashed_password=hashed_password,
+        role=role,
+        family_id=family_id,
+    )
+
+    session.add(new_user)
+    session.commit()  # Committet Familie UND User gleichzeitig
+    session.refresh(new_user)
+    
+    # join_code für die Antwort laden
+    final_join_code = None
+    if family_id:
+        family = session.get(Family, family_id)
+        if family:
+            final_join_code = family.join_code
+            
+    return UserPublic(
+        id=new_user.id,
+        username=new_user.username,
+        role=new_user.role,
+        family_id=new_user.family_id,
+        join_code=final_join_code
+    )

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Home } from 'lucide-react'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { Home, CheckCircle2 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import api from '../lib/api'
 import type { User } from '../types'
@@ -13,6 +13,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const { login } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
+  const successMessage = location.state?.message
 
   const handleSubmit: React.ComponentProps<'form'>['onSubmit'] = async (e) => {
     e.preventDefault()
@@ -26,7 +28,7 @@ export default function LoginPage() {
       const { data } = await api.post<{ access_token: string }>('/api/login', params)
       const token = data.access_token
 
-      let payload: { sub?: string; role?: string; id?: number }
+      let payload: { sub?: string; role?: string; id?: number; family_name?: string; join_code?: string }
       try {
         payload = JSON.parse(atob(token.split('.')[1]))
       } catch {
@@ -43,6 +45,8 @@ export default function LoginPage() {
         id: payload.id ?? 0,
         username: payload.sub,
         role: payload.role as User['role'],
+        family_name: payload.family_name,
+        join_code: payload.join_code,
       }
 
       login(user, token)
@@ -104,6 +108,13 @@ export default function LoginPage() {
               />
             </div>
 
+            {successMessage && !error && (
+              <div className="flex items-center gap-2 p-3 rounded-xl text-xs font-medium bg-green-50 text-green-700 border border-green-100 mb-1">
+                <CheckCircle2 size={14} className="flex-shrink-0" />
+                {successMessage}
+              </div>
+            )}
+
             <ErrorAlert message={error} />
 
             <button
@@ -115,6 +126,13 @@ export default function LoginPage() {
               {loading ? 'Anmelden...' : 'Anmelden'}
             </button>
           </form>
+
+          <div className="mt-6 text-center text-sm" style={{ color: 'var(--color-stone-600)' }}>
+            Noch kein Account?{' '}
+            <Link to="/register" style={{ color: 'var(--color-sage-600)', fontWeight: 500, textDecoration: 'none' }}>
+              Registrieren
+            </Link>
+          </div>
         </div>
 
         <div className="mt-4 p-3 rounded-xl text-xs flex flex-col gap-1" style={{ background: 'var(--color-sage-50)', color: 'var(--color-sage-500)' }}>
