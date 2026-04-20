@@ -25,11 +25,19 @@ class UserCreate(BaseModel):
     family_id: Optional[int] = None
 
 
+class UserRegister(BaseModel):
+    username: str
+    password: str
+    join_code: Optional[str] = None
+    family_name: Optional[str] = None
+
+
 class UserPublic(BaseModel):
     id: int
     username: str
     role: Role
     family_id: Optional[int] = None
+    join_code: Optional[str] = None
 
 
 class UserUpdate(BaseModel):

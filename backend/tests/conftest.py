@@ -40,7 +40,7 @@ def client_fixture(session: Session):
 
 @pytest.fixture(name="test_family")
 def test_family_fixture(session: Session):
-    family = Family(name="Test Family")
+    family = Family(name="Test Family", join_code="TESTCODE")
     session.add(family)
     session.commit()
     session.refresh(family)

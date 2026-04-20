@@ -5,11 +5,14 @@ export interface User {
   username: string
   role: Role
   family_id?: number | null
+  family_name?: string | null
+  join_code?: string | null
 }
 
 export interface Family {
   id: number
   name: string
+  join_code: string
   member_count: number
 }
 
