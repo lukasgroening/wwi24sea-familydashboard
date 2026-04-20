@@ -72,3 +72,25 @@ def delete_family(session: Session, family_id: int) -> None:
 
     session.delete(family)
     session.commit()
+
+
+def regenerate_join_code(session: Session, family_id: int) -> Family:
+    """Generiert einen neuen Join-Code für eine Familie."""
+    family = session.get(Family, family_id)
+    if not family:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Familie nicht gefunden."
+        )
+
+    while True:
+        new_code = generate_join_code()
+        if not session.exec(
+            select(Family).where(Family.join_code == new_code)
+        ).first():
+            break
+
+    family.join_code = new_code
+    session.add(family)
+    session.commit()
+    session.refresh(family)
+    return family

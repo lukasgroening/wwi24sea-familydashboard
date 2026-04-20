@@ -28,3 +28,8 @@ def create_family(family_in: FamilyCreate, session: Session = Depends(get_sessio
 def delete_family(family_id: int, session: Session = Depends(get_session)):
     family_service.delete_family(session, family_id)
     return None
+
+
+@router.post("/{family_id}/regenerate-join-code", response_model=FamilyPublic)
+def regenerate_join_code(family_id: int, session: Session = Depends(get_session)):
+    return family_service.regenerate_join_code(session, family_id)
