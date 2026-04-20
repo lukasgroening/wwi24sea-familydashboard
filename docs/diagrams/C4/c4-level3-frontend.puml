@@ -1,0 +1,57 @@
+@startuml C4_Component_Frontend
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram – Frontend SPA
+
+Container(backend, "Backend API", "FastAPI", "")
+System_Ext(nominatim, "Nominatim / OSM", "")
+
+Container_Boundary(frontend, "Frontend SPA (React 19)") {
+    Component(app, "App (Root)", "App.tsx", "React Router Setup,\nQueryClientProvider,\nRouten-Definition")
+    Component(auth_guard, "AuthGuard", "components/AuthGuard.tsx", "Routen-Schutz,\nRedirect zu /login,\nRollen-Prüfung")
+    Component(app_layout, "AppLayout", "pages/AppLayout.tsx", "Sidebar + Outlet,\nResponsive Layout")
+    Component(sidebar, "Sidebar", "components/Sidebar.tsx", "Navigation\n(Dashboard, Kalender,\nStundenplan),\nAdmin-Bereich,\nLogout, User-Info")
+    Component(login_page, "LoginPage", "pages/LoginPage.tsx", "Login-Formular,\nJWT-Dekodierung,\nAuth-Store-Update")
+    Component(dashboard_page, "DashboardPage", "pages/DashboardPage.tsx", "Drag-and-Drop\nWidget-Grid\n(react-grid-layout, 12 Spalten),\nWidget hinzufügen/entfernen")
+    Component(admin_page, "AdminPage", "pages/AdminPage.tsx", "Mitgliederverwaltung:\nUser-Liste, CRUD\nmit Bestätigungsdialog")
+    Component(auth_store, "Auth Store", "store/authStore.ts", "Zustand + persist\nuser, token,\nlogin(), logout(),\nisAuthenticated()")
+    Component(dashboard_store, "Dashboard Store", "store/dashboardStore.ts", "Zustand + persist\nwidgets[], layouts[],\nadd/remove/update\nWidget-Settings")
+    Component(api_client, "API Client", "lib/api.ts", "Axios-Instanz,\nAuth-Interceptor\n(Bearer Token),\n401-Redirect")
+    Component(weather_api, "Weather API Client", "lib/weatherApi.ts", "fetchWeather(city)\nvia Backend,\nsearchCities(query)\nvia Nominatim")
+    Component(widget_registry, "Widget Registry", "widgets/index.ts", "Zentrale Widget-\nKonfiguration:\nid, name, component,\ndefaultSize, requiredRole")
+    Component(weather_widget, "WeatherWidget", "widgets/WeatherWidget/", "Temperatur, Wind,\nBeschreibung,\nStadtsuche, Settings\n(°C/°F), Auto-Refresh")
+    Component(todo_widget, "TodoWidget", "widgets/TodoWidget/", "CRUD Todos,\nTag-System,\nFilter, Optimistisches\nUpdate")
+    Component(calendar_widget, "CalendarWidget", "widgets/CalendarWidget/", "Monatsansicht, \nWochenansicht, \nEvent-Dots,\nNächste Termine")
+    Component(schedule_widget, "TimetableWidget", "widgets/Stundenplan/", "Wochentags-Tabs,\nStundenplan\n(Mock-Daten)")
+}
+
+Rel(app, auth_guard, "schützt Routen")
+Rel(app, app_layout, "rendert Layout")
+Rel(app_layout, sidebar, "enthält")
+Rel(app_layout, dashboard_page, "rendert via Outlet")
+Rel(app_layout, admin_page, "rendert via Outlet")
+
+Rel(login_page, api_client, "POST /api/login")
+Rel(login_page, auth_store, "login(user, token)")
+Rel(auth_guard, auth_store, "isAuthenticated(),\nuser.role")
+
+Rel(dashboard_page, dashboard_store, "widgets, layouts,\nadd/remove/update")
+Rel(dashboard_page, widget_registry, "WIDGETS-Liste")
+Rel(dashboard_page, weather_widget, "rendert")
+Rel(dashboard_page, todo_widget, "rendert")
+Rel(dashboard_page, calendar_widget, "rendert")
+Rel(dashboard_page, schedule_widget, "rendert")
+
+Rel(admin_page, api_client, "CRUD /api/users/")
+Rel(sidebar, auth_store, "user, logout()")
+
+Rel(todo_widget, api_client, "CRUD /api/todos/")
+Rel(weather_widget, weather_api, "fetchWeather(),\nsearchCities()")
+
+Rel(api_client, backend, "HTTP/REST\n+ Bearer Token", "Axios")
+Rel(weather_api, backend, "GET /api/weather", "Axios")
+Rel(weather_api, nominatim, "Stadtsuche", "Axios")
+
+@enduml

@@ -1,0 +1,62 @@
+@startuml C4_Component_Backend
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram – Backend API
+
+Container(frontend, "Frontend", "React 19 + TypeScript", "")
+
+Container_Boundary(backend, "Backend API (FastAPI)") {
+    Component(main, "FastAPI App", "main.py", "App-Init, Lifespan\n(DB-Init + Seed),\nRouter-Registrierung,\nHealth-Check")
+    Component(auth_module, "Auth Module", "auth.py", "Passwort-Hashing (bcrypt),\nJWT-Token-Erstellung\n(HS256, 60 Min),\nSecret-Key aus .env")
+    Component(dependencies, "Dependencies", "dependencies.py", "get_current_user\n(JWT-Validierung),\nrequire_admin\n(Rollen-Prüfung)")
+    Component(auth_router, "Auth Router", "routers/auth_router.py", "POST /api/login\nOAuth2-Login → JWT")
+    Component(users_router, "Users Router", "routers/users.py", "CRUD /api/users/\nGET, POST, PATCH, DELETE\n+ GET /roles\nAdmin-geschützt")
+    Component(notes_router, "Notes Router", "routers/notes.py", "GET/POST /api/notes/\nTeilweise authentifiziert")
+    Component(todos_router, "Todos Router", "routers/todos.py", "CRUD /api/todos/\nGET, POST, PATCH, DELETE\nAuthentifiziert")
+    Component(weather_router, "Weather Router", "routers/weather.py", "GET /api/weather?city=\nÖffentlich (kein Auth)\nProxy zu Open-Meteo")
+    Component(db_module, "Database Module", "database.py", "SQLite-Engine,\nSession-Generator")
+    Component(user_model, "User Model", "models/user.py", "User (id, username,\nhashed_password, role)\nRole-Enum\n+ Create/Public/Update")
+    Component(note_model, "Note Model", "models/note.py", "Note (id, title,\ncontent, created_at)\n+ NoteCreate")
+    Component(todo_model, "ToDo Model", "models/todo.py", "ToDo (id, title,\nis_completed, tag,\nuser_id FK→User)\n+ Create/Public/Update")
+    Component(weather_model, "Weather Model", "models/weather.py", "WeatherPublic\n(city, temperature,\nwindspeed, description)\nKein DB-Table")
+}
+
+ContainerDb(database, "SQLite DB", "database.db", "")
+System_Ext(openmeteo, "Open-Meteo API", "")
+
+Rel(frontend, auth_router, "POST /api/login", "HTTP/REST")
+Rel(frontend, users_router, "CRUD /api/users/", "HTTP/REST + JWT")
+Rel(frontend, notes_router, "GET/POST /api/notes/", "HTTP/REST")
+Rel(frontend, todos_router, "CRUD /api/todos/", "HTTP/REST + JWT")
+Rel(frontend, weather_router, "GET /api/weather", "HTTP/REST")
+
+Rel(main, auth_router, "registriert")
+Rel(main, users_router, "registriert")
+Rel(main, notes_router, "registriert")
+Rel(main, todos_router, "registriert")
+Rel(main, weather_router, "registriert")
+
+Rel(auth_router, auth_module, "verify_password,\ncreate_access_token")
+Rel(auth_router, db_module, "get_session")
+Rel(auth_router, user_model, "User-Abfrage")
+
+Rel(users_router, dependencies, "require_admin")
+Rel(users_router, auth_module, "get_password_hash")
+Rel(users_router, db_module, "get_session")
+
+Rel(todos_router, dependencies, "get_current_user")
+Rel(todos_router, db_module, "get_session")
+
+Rel(notes_router, dependencies, "get_current_user")
+Rel(notes_router, db_module, "get_session")
+
+Rel(weather_router, openmeteo, "Geocoding +\nForecast", "HTTPS")
+
+Rel(dependencies, auth_module, "SECRET_KEY,\nALGORITHM")
+Rel(dependencies, db_module, "get_session")
+
+Rel(db_module, database, "SQLModel ORM")
+
+@enduml

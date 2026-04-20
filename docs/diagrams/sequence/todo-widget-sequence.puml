@@ -1,0 +1,82 @@
+@startuml Todo Widget Sequenzdiagramm
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+actor Benutzer as User
+participant "TodoWidget" as Frontend
+participant "Backend API" as Backend
+database "Datenbank" as DB
+
+== Todos laden ==
+User -> Frontend: Öffnet Dashboard
+activate Frontend
+Frontend -> Backend: GET /api/todos/
+activate Backend
+Backend -> DB: SELECT * FROM todos
+activate DB
+DB --> Backend: Todo-Liste
+deactivate DB
+Backend --> Frontend: 200 OK + Todo[]
+deactivate Backend
+Frontend -> Frontend: setTodos(data)
+Frontend --> User: Zeigt Todo-Liste an
+deactivate Frontend
+
+== Neues Todo erstellen ==
+User -> Frontend: Gibt Titel ein + klickt "+"
+activate Frontend
+Frontend -> Backend: POST /api/todos/\n{title, tag}
+activate Backend
+Backend -> DB: INSERT INTO todos
+activate DB
+DB --> Backend: Neues Todo
+deactivate DB
+Backend --> Frontend: 201 Created + Todo
+deactivate Backend
+Frontend -> Frontend: setTodos([...prev, data])
+Frontend --> User: Zeigt neues Todo an
+deactivate Frontend
+
+== Todo-Status umschalten ==
+User -> Frontend: Klickt auf Todo
+activate Frontend
+Frontend -> Frontend: Optimistisches Update
+Frontend --> User: Zeigt neuen Status
+Frontend -> Backend: PATCH /api/todos/{id}\n{is_completed}
+activate Backend
+Backend -> DB: UPDATE todos
+activate DB
+DB --> Backend: Aktualisiertes Todo
+deactivate DB
+Backend --> Frontend: 200 OK + Todo
+deactivate Backend
+deactivate Frontend
+
+note right of Frontend
+  Bei Fehler: Rollback
+  zum vorherigen Status
+end note
+
+== Todo löschen ==
+User -> Frontend: Klickt "x" bei\nerledigen Todo
+activate Frontend
+Frontend -> Frontend: Optimistisches Update
+Frontend --> User: Todo verschwindet
+Frontend -> Backend: DELETE /api/todos/{id}
+activate Backend
+Backend -> DB: DELETE FROM todos
+activate DB
+DB --> Backend: OK
+deactivate DB
+Backend --> Frontend: 204 No Content
+deactivate Backend
+deactivate Frontend
+
+note right of Frontend
+  Bei Fehler: Wiederherstellung
+  aus Backup
+end note
+
+@enduml

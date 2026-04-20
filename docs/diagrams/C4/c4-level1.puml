@@ -1,0 +1,24 @@
+@startuml C4_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title System Context Diagram – FamilyBoard
+
+Person(sysadmin, "System-Administrator", "Höchste Berechtigung,\nkann alle Familien verwalten")
+Person(famadmin, "Familien-Administrator", "Verwaltet eigene Familie,\nkonfiguriert Widgets")
+Person(nutzer, "Nutzer", "Normales Familienmitglied,\nnutzt Dashboard")
+
+System(familyboard, "FamilyBoard", "Web-basiertes Familien-Dashboard\nzur gemeinsamen Verwaltung von\nTodos, Kalender, Stundenplan\nund Wetterdaten")
+
+System_Ext(openmeteo, "Open-Meteo API", "Geocoding + Wetterdaten\n(geocoding-api.open-meteo.com\napi.open-meteo.com)")
+System_Ext(nominatim, "Nominatim / OpenStreetMap", "Geocoding-Service für\nStadtsuche / Autocomplete\n(nominatim.openstreetmap.org)")
+
+Rel(sysadmin, familyboard, "Nutzt", "HTTPS / Browser")
+Rel(famadmin, familyboard, "Nutzt", "HTTPS / Browser")
+Rel(nutzer, familyboard, "Nutzt", "HTTPS / Browser")
+
+Rel(familyboard, openmeteo, "Ruft Wetterdaten ab", "HTTPS/REST")
+Rel(familyboard, nominatim, "Sucht Städte", "HTTPS/REST")
+
+@enduml
