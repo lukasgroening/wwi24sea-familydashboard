@@ -4,6 +4,7 @@ import { AxiosError } from 'axios'
 import api from '../lib/api'
 import type { User, Role } from '../types'
 import ErrorAlert from '../components/ErrorAlert'
+import { useAuthStore } from '../store/authStore'
 
 const ROLES: Role[] = ['System-Administrator', 'Familien-Administrator', 'Nutzer']
 
@@ -37,12 +38,16 @@ const MIN_PASSWORD_LENGTH = 6
 
 export default function AdminPage() {
   const queryClient = useQueryClient()
+  const { user: currentUser } = useAuthStore()
   const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null)
   const [editUser, setEditUser] = useState<User | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [form, setForm] = useState({ username: '', password: '', role: 'Nutzer' as Role })
   const [formError, setFormError] = useState('')
   const [deleteError, setDeleteError] = useState('')
+
+  const isSystemAdmin = currentUser?.role === 'System-Administrator'
+  const availableRoles = isSystemAdmin ? ROLES : ROLES.filter(r => r !== 'System-Administrator')
 
   const { data: users = [], isLoading, error } = useQuery<User[]>({
     queryKey: ['users'],
@@ -191,7 +196,7 @@ export default function AdminPage() {
                 value={form.role}
                 onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as Role }))}
               >
-                {ROLES.map((r) => (
+                {availableRoles.map((r) => (
                   <option key={r} value={r}>{r}</option>
                 ))}
               </select>
@@ -254,42 +259,46 @@ export default function AdminPage() {
                     </span>
                   </td>
                   <td className="py-3 text-right">
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        onClick={() => openEdit(user)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                        style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-900)' }}
-                      >
-                        Bearbeiten
-                      </button>
-                      {deleteConfirm === user.id ? (
-                        <>
+                    {(!isSystemAdmin && user.role === 'System-Administrator') ? (
+                      <span className="text-xs italic" style={{ color: 'var(--color-stone-400)' }}>Schreibgeschützt</span>
+                    ) : (
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => openEdit(user)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                          style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-900)' }}
+                        >
+                          Bearbeiten
+                        </button>
+                        {deleteConfirm === user.id ? (
+                          <>
+                            <button
+                              onClick={() => deleteMutation.mutate(user.id)}
+                              disabled={deleteMutation.isPending}
+                              className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                              style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
+                            >
+                              Bestätigen
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm(null)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                              style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
+                            >
+                              Abbrechen
+                            </button>
+                          </>
+                        ) : (
                           <button
-                            onClick={() => deleteMutation.mutate(user.id)}
-                            disabled={deleteMutation.isPending}
+                            onClick={() => setDeleteConfirm(user.id)}
                             className="px-3 py-1.5 rounded-lg text-xs font-medium"
                             style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
                           >
-                            Bestätigen
+                            Löschen
                           </button>
-                          <button
-                            onClick={() => setDeleteConfirm(null)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                            style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
-                          >
-                            Abbrechen
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => setDeleteConfirm(user.id)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                          style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
-                        >
-                          Löschen
-                        </button>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -66,6 +66,13 @@ def create_user(session: Session, user_in: UserCreate, current_user: User) -> Us
     """Erstellt einen neuen Benutzer."""
     _check_username_exists(session, user_in.username)
 
+    # Nur System-Admins dürfen System-Admins erstellen
+    if user_in.role == Role.SYSTEM_ADMIN and current_user.role != Role.SYSTEM_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Zugriff verweigert. Nur System-Administratoren können System-Administrator-Accounts erstellen.",
+        )
+
     # Familien-Admin kann nur User in seiner eigenen Familie anlegen
     family_id = user_in.family_id
     if current_user.role == Role.FAMILY_ADMIN:
@@ -95,15 +102,28 @@ def update_user(
             status_code=status.HTTP_404_NOT_FOUND, detail="Benutzer nicht gefunden."
         )
 
-    # Familien-Admin darf nur User aus seiner Familie bearbeiten
-    if (
-        current_user.role == Role.FAMILY_ADMIN
-        and user.family_id != current_user.family_id
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Zugriff verweigert. Dieser Benutzer gehört nicht zu deiner Familie.",
-        )
+    # Sicherheitschecks für Rollen-Berechtigungen
+    if current_user.role == Role.FAMILY_ADMIN:
+        # Familien-Admin darf nur User aus seiner Familie bearbeiten
+        if user.family_id != current_user.family_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Zugriff verweigert. Dieser Benutzer gehört nicht zu deiner Familie.",
+            )
+        
+        # Familien-Admin darf keine System-Admins bearbeiten
+        if user.role == Role.SYSTEM_ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Zugriff verweigert. System-Administratoren können nicht von Familien-Administratoren bearbeitet werden.",
+            )
+
+        # Familien-Admin darf niemanden zum System-Admin befördern
+        if user_update.role == Role.SYSTEM_ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Zugriff verweigert. Nur System-Administratoren können die System-Administrator-Rolle vergeben.",
+            )
 
     if user_update.role is not None and user_update.role == Role.USER:
         _check_last_admin(session, user, "zu einem normalen Nutzer degradiert")

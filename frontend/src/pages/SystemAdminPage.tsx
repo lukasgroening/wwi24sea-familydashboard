@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { X, ChevronDown, ChevronUp, RefreshCw, UserMinus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import api from '../lib/api'
 import type { User, Role, Family } from '../types'
 import ErrorAlert from '../components/ErrorAlert'
+import { useAuthStore } from '../store/authStore'
 
 const ROLES: Role[] = ['System-Administrator', 'Familien-Administrator', 'Nutzer']
 
@@ -36,11 +37,13 @@ const inputStyle: React.CSSProperties = {
 
 export default function SystemAdminPage() {
   const queryClient = useQueryClient()
+  const { user: currentUser } = useAuthStore()
 
   const [showFamilyForm, setShowFamilyForm] = useState(false)
   const [familyName, setFamilyName] = useState('')
   const [familyError, setFamilyError] = useState('')
   const [deleteFamilyConfirm, setDeleteFamilyConfirm] = useState<number | null>(null)
+  const [expandedFamilies, setExpandedFamilies] = useState<number[]>([])
 
   const [showUserForm, setShowUserForm] = useState(false)
   const [editUser, setEditUser] = useState<User | null>(null)
@@ -48,6 +51,9 @@ export default function SystemAdminPage() {
   const [userForm, setUserForm] = useState({ username: '', password: '', role: 'Nutzer' as Role, family_id: '' })
   const [userError, setUserError] = useState('')
   const [deleteUserError, setDeleteUserError] = useState('')
+
+  const isSystemAdmin = currentUser?.role === 'System-Administrator'
+  const availableRoles = isSystemAdmin ? ROLES : ROLES.filter(r => r !== 'System-Administrator')
 
   const { data: families = [], isLoading: familiesLoading } = useQuery<Family[]>({
     queryKey: ['families'],
@@ -77,6 +83,13 @@ export default function SystemAdminPage() {
       queryClient.invalidateQueries({ queryKey: ['families'] })
       queryClient.invalidateQueries({ queryKey: ['users'] })
       setDeleteFamilyConfirm(null)
+    },
+  })
+
+  const regenerateJoinCodeMutation = useMutation({
+    mutationFn: (id: number) => api.post(`/api/families/${id}/regenerate-join-code`).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['families'] })
     },
   })
 
@@ -220,50 +233,128 @@ export default function SystemAdminPage() {
           )}
           {families.length > 0 && (
             <div className="flex flex-col gap-2">
-              {families.map((family) => (
-                <div
-                  key={family.id}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl"
-                  style={{ background: 'var(--color-stone-50)', border: '1px solid var(--color-stone-border)' }}
-                >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-semibold flex-shrink-0"
-                    style={{ background: 'var(--color-sage-500)' }}>
-                    {family.name[0]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">{family.name}</div>
-                    <div className="text-xs" style={{ color: 'var(--color-stone-600)' }}>{family.member_count} Mitglied{family.member_count !== 1 ? 'er' : ''}</div>
-                  </div>
-                  {deleteFamilyConfirm === family.id ? (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => deleteFamilyMutation.mutate(family.id)}
-                        disabled={deleteFamilyMutation.isPending}
-                        className="px-2 py-1 rounded-lg text-xs font-medium"
-                        style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
-                      >
-                        Löschen
-                      </button>
-                      <button
-                        onClick={() => setDeleteFamilyConfirm(null)}
-                        className="px-2 py-1 rounded-lg text-xs font-medium"
-                        style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
-                      >
-                        Abbruch
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setDeleteFamilyConfirm(family.id)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-xs"
-                      style={{ background: 'var(--color-danger-50)', border: 'none', cursor: 'pointer', color: 'var(--color-danger-500)' }}
-                      title="Familie löschen"
+              {families.map((family) => {
+                const isExpanded = expandedFamilies.includes(family.id)
+                const familyMembers = users.filter((u) => u.family_id === family.id)
+
+                return (
+                  <div key={family.id} className="flex flex-col gap-0.5">
+                    <div
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
+                      style={{
+                        background: 'var(--color-stone-50)',
+                        border: '1px solid var(--color-stone-border)',
+                      }}
                     >
-                      <X size={12} />
-                    </button>
-                  )}
-                </div>
-              ))}
+                      <button
+                        onClick={() =>
+                          setExpandedFamilies((prev) =>
+                            prev.includes(family.id) ? prev.filter((id) => id !== family.id) : [...prev, family.id]
+                          )
+                        }
+                        className="w-6 h-6 rounded-lg flex items-center justify-center transition-colors"
+                        style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', color: 'var(--color-stone-600)' }}
+                      >
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </button>
+
+                      <div
+                        className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-semibold flex-shrink-0"
+                        style={{ background: 'var(--color-sage-500)' }}
+                      >
+                        {family.name[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium">{family.name}</div>
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs px-1.5 py-0.5 rounded bg-stone-200 text-stone-700 font-mono">
+                            {family.join_code}
+                          </code>
+                          <button
+                            onClick={() => regenerateJoinCodeMutation.mutate(family.id)}
+                            disabled={regenerateJoinCodeMutation.isPending}
+                            className="p-1 rounded hover:bg-stone-200 transition-colors"
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-stone-500)' }}
+                            title="Join-Code neu generieren"
+                          >
+                            <RefreshCw size={12} className={regenerateJoinCodeMutation.isPending ? 'animate-spin' : ''} />
+                          </button>
+                          <span className="text-xs" style={{ color: 'var(--color-stone-400)' }}>•</span>
+                          <span className="text-xs" style={{ color: 'var(--color-stone-600)' }}>
+                            {family.member_count} Mitglied{family.member_count !== 1 ? 'er' : ''}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-1">
+                        {deleteFamilyConfirm === family.id ? (
+                          <>
+                            <button
+                              onClick={() => deleteFamilyMutation.mutate(family.id)}
+                              disabled={deleteFamilyMutation.isPending}
+                              className="px-2 py-1 rounded-lg text-xs font-medium"
+                              style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', color: 'var(--color-danger-700)' }}
+                            >
+                              Löschen
+                            </button>
+                            <button
+                              onClick={() => setDeleteFamilyConfirm(null)}
+                              className="px-2 py-1 rounded-lg text-xs font-medium"
+                              style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', color: 'var(--color-stone-700)' }}
+                            >
+                              Abbruch
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => setDeleteFamilyConfirm(family.id)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                            style={{ background: 'var(--color-danger-50)', border: 'none', cursor: 'pointer', color: 'var(--color-danger-500)' }}
+                            title="Familie löschen"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div
+                        className="ml-6 mt-1 mb-2 p-3 rounded-xl flex flex-col gap-2"
+                        style={{ background: 'var(--color-stone-50)', border: '1px solid var(--color-stone-border)', borderTop: 'none' }}
+                      >
+                        {familyMembers.length === 0 ? (
+                          <div className="text-xs text-stone-500 py-1">Keine Mitglieder in dieser Familie.</div>
+                        ) : (
+                          familyMembers.map((member) => (
+                            <div key={member.id} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded-lg hover:bg-stone-100 transition-colors">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                                  style={{ background: 'var(--color-sage-400)' }}>
+                                  {member.username[0].toUpperCase()}
+                                </div>
+                                <span className="text-sm font-medium">{member.username}</span>
+                                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                                  style={ROLE_BADGE[member.role]}>
+                                  {member.role}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => updateUserMutation.mutate({ id: member.id, data: { family_id: null } })}
+                                className="p-1.5 rounded-lg text-stone-400 hover:text-danger-500 hover:bg-danger-50 transition-colors"
+                                style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
+                                title="Aus Familie entfernen"
+                              >
+                                <UserMinus size={14} />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -320,7 +411,7 @@ export default function SystemAdminPage() {
                       value={userForm.role}
                       onChange={(e) => setUserForm((f) => ({ ...f, role: e.target.value as Role }))}
                     >
-                      {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                      {availableRoles.map((r) => <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                   <div>
