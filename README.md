@@ -9,6 +9,7 @@ Die gesamte Anwendung (Frontend + Backend + Docker) lässt sich mit einem einzig
 Das Script führt automatisch alle Schritte aus (npm install → Linting → TypeScript-Build → pip install → Docker-Start).
 
 Nach erfolgreichem Build ist die Anwendung erreichbar unter:
+
 - **Frontend:** http://localhost:8401
 - **Backend API:** http://localhost:8400
 - **API-Docs:** http://localhost:8400/docs
@@ -21,47 +22,82 @@ Zum Stoppen: `docker-compose down`
 
 ---
 
+# Dokumentation
+
+## Architektur
+
+Die Architektur-Dokumentation ist in zwei Bereiche aufgeteilt:
+
+### Architektur ([`docs/architecture/`](docs/architecture/))
+
+- Architektur-Übersicht
+- Techstack-Übersicht (Frontend & Backend)
+
+### PlantUML-Diagramme ([`docs/diagrams/`](docs/diagrams/))
+
+- **C4-Modell** (Level 1-3): System-Kontext, Container, Komponenten
+- **Sequenzdiagramme**: Login-Flow, Todo-Widget Interaktionen
+
+📖 **Anleitung zum Anzeigen:** Siehe [`docs/diagrams/README.md`](docs/diagrams/README.md)
+
+## KI-Nutzung
+
+Eine vollständige Übersicht über die eingesetzten KI-Tools und deren Verwendung im Projekt finden Sie in [`KI_LOG.md`](KI_LOG.md).
+
+---
+
 # Buildscript
+
 ## Frontend
+
 ### Schritt 1: Dependencies installieren
+
 ```
 cd frontend
 npm install
 ```
+
 Tool: npm (Node Package Manager)
 
 Ergebnis: node_modules/ Ordner mit ~500MB Dependencies
- 
+
 ### Schritt 2: Type Checking
+
 ```
 npm run build  # Führt TypeScript Compiler aus
 ```
+
 Tool: tsc (TypeScript Compiler 5.9.3)
 
 Prüft: Type Errors, Interface Violations
- 
+
 ### Schritt 3: Production Build
+
 Tool: Vite 8.0.0
- 
+
 Prozess:
+
 - Transpiliert TypeScript → JavaScript
 - Bundelt alle Module
 - Minifiziert Code
 - Tree-Shaking (entfernt ungenutzten Code)
 - CSS Processing (TailwindCSS → optimiertes CSS)
 
-Ergebnis: frontend/dist/ 
+Ergebnis: frontend/dist/
 
 ## Backend
+
 ### Schritt 1: Dependencies installieren
+
 ```
 cd backend
 pip install -r requirements.txt
 ```
+
 Tool: pip (Python Package Manager)
 
 Ergebnis: Python packages im venv oder global
- 
+
 **Keine Compilation nötig:**
 
 - Python ist interpretierte Sprache → Code wird zur Laufzeit ausgeführt
@@ -69,9 +105,9 @@ Ergebnis: Python packages im venv oder global
 - Tool: ruff, black, mypy
 
 ## Docker
- 
+
 ### Docker Images bauen:
- 
+
 `docker-compose build` oder `docker-compose up --build`
 
 ### Docker Frontend:
@@ -85,6 +121,7 @@ COPY . .                     # Source Code kopieren (5 MB)
 EXPOSE 5173                  # Port deklarieren
 CMD ["npm", "run", "dev"]    # Start-Kommando
 ```
+
 ### Docker Backend:
 
 ```
@@ -99,11 +136,11 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ## Build Tools
 
-| Tool | Zweck | Wo wird es verwendet |
-| --- | --- | --- |
-| npm  | Package Manager | Frontend Dependencies |
-| tsc | TypeScript Compiler | Frontend Type Check |
-| Vite | Build Tool | Frontend Bundle & Minify |
-| pip | Package Manager | Backend Dependencies |
-| Docker | Container Build | Images bauen |
-| Docker Compose | Orchestrierung | Multi-Container Start |
+| Tool           | Zweck               | Wo wird es verwendet     |
+| -------------- | ------------------- | ------------------------ |
+| npm            | Package Manager     | Frontend Dependencies    |
+| tsc            | TypeScript Compiler | Frontend Type Check      |
+| Vite           | Build Tool          | Frontend Bundle & Minify |
+| pip            | Package Manager     | Backend Dependencies     |
+| Docker         | Container Build     | Images bauen             |
+| Docker Compose | Orchestrierung      | Multi-Container Start    |

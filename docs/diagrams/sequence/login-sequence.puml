@@ -1,0 +1,40 @@
+@startuml Login Sequenzdiagramm
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+actor Benutzer as User
+participant "Frontend" as Frontend
+participant "Backend" as Backend
+database "Datenbank" as DB
+
+== Login ==
+User -> Frontend: Gibt Anmeldedaten ein
+activate Frontend
+
+Frontend -> Backend: POST /api/login
+activate Backend
+
+Backend -> DB: Prüfe Benutzerdaten
+activate DB
+DB --> Backend: User
+deactivate DB
+
+Backend -> Backend: Passwort-Verifikation
+
+alt Erfolgreich
+    Backend --> Frontend: JWT Token
+    deactivate Backend
+    Frontend -> Frontend: Speichert Token
+    Frontend --> User: Zum Dashboard
+    deactivate Frontend
+    
+else Fehlgeschlagen
+    Backend --> Frontend: Fehler
+    deactivate Backend
+    Frontend --> User: Fehlermeldung
+    deactivate Frontend
+end
+
+@enduml

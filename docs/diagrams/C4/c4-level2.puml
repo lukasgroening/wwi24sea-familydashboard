@@ -1,0 +1,29 @@
+@startuml C4_Container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Container Diagram – FamilyBoard
+
+Person(famadmin, "Familien-Administrator", "Verwaltet Familienmitglieder\nund Widgets")
+Person(nutzer, "Nutzer", "Nutzt Dashboard,\nTodos, Kalender, \nWetterdaten, Stundenplan")
+
+System_Boundary(familyboard, "FamilyBoard") {
+    Container(frontend, "Frontend SPA", "React 19, TypeScript,\nVite 8, TailwindCSS 4,\nZustand, React Query", "Single-Page-Application\nim Browser des Nutzers.\nDrag-and-Drop Widget-Grid.")
+    Container(backend, "Backend API", "Python 3.11, FastAPI,\nSQLModel, Uvicorn", "REST-API Server.\nAuthentifizierung (JWT/bcrypt),\nBusiness-Logik, Wetter-Proxy.")
+    ContainerDb(database, "SQLite Datenbank", "SQLite (database.db)", "Persistente Speicherung\nvon Users, Notes, Todos")
+}
+
+System_Ext(openmeteo, "Open-Meteo API", "Geocoding + Weather API")
+System_Ext(nominatim, "Nominatim / OSM", "Geocoding für Stadtsuche")
+
+Rel(famadmin, frontend, "Nutzt", "HTTPS / Browser")
+Rel(nutzer, frontend, "Nutzt", "HTTPS / Browser")
+
+Rel(frontend, backend, "API-Aufrufe\n(Login, Todos, Users, Weather)", "HTTP/REST [JSON]\nPort 8000\nAxios + Bearer Token")
+Rel(frontend, nominatim, "Stadtsuche /\nAutocomplete", "HTTPS/REST")
+
+Rel(backend, database, "Liest / Schreibt\nUsers, Notes, Todos", "SQLModel / SQLAlchemy")
+Rel(backend, openmeteo, "Geocoding +\nWetterdaten", "HTTPS/REST\n(Python requests)")
+
+@enduml
