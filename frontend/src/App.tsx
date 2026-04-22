@@ -9,6 +9,7 @@ import AdminPage from './pages/AdminPage'
 import CalendarPage from './pages/CalendarPage'
 import SchedulePage from './pages/SchedulePage'
 import SystemAdminPage from './pages/SystemAdminPage'
+import LandingPage from './pages/LandingPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,6 +22,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
@@ -31,7 +33,7 @@ export default function App() {
               </AuthGuard>
             }
           >
-            <Route index element={<DashboardPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/schedule" element={<SchedulePage />} />
             <Route

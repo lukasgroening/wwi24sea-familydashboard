@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, CalendarDays, GraduationCap, Users, Settings, Home, X, UserPlus, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, GraduationCap, Users, Settings, X, UserPlus, type LucideIcon, LogOut } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 
 interface SidebarProps {
@@ -9,7 +9,7 @@ interface SidebarProps {
 }
 
 const navItems: { label: string; to: string; icon: LucideIcon }[] = [
-  { label: 'Dashboard', to: '/', icon: LayoutDashboard },
+  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
   { label: 'Kalender', to: '/calendar', icon: CalendarDays },
   { label: 'Stundenplan', to: '/schedule', icon: GraduationCap },
 ]
@@ -21,6 +21,14 @@ const adminItems: { label: string; to: string; icon: LucideIcon }[] = [
 const systemAdminItems: { label: string; to: string; icon: LucideIcon }[] = [
   { label: 'System', to: '/admin/system', icon: Settings },
 ]
+
+const ink = '#2a241d'
+const inkSoft = '#8a7d6a'
+const ink2 = '#554a3c'
+const paper = '#f5efe3'
+const paper2 = '#ede5d2'
+const border = '#ddd3be'
+const accent = 'oklch(55% 0.12 146)'
 
 export default function Sidebar({ isOpen, onClose, onInviteClick }: SidebarProps) {
   const { user, logout } = useAuthStore()
@@ -36,49 +44,59 @@ export default function Sidebar({ isOpen, onClose, onInviteClick }: SidebarProps
 
   return (
     <aside
-      className={`w-56 flex flex-col gap-7 flex-shrink-0 py-7 px-4 fixed inset-y-0 left-0 z-50 transition-transform duration-300 md:relative md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
-      style={{ background: 'var(--color-stone-200)', borderRight: '1px solid var(--color-stone-sidebar)' }}
+      className={`flex flex-col flex-shrink-0 fixed inset-y-0 left-0 z-50 overflow-y-auto transition-transform duration-300 md:relative md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      style={{
+        width: 224,
+        gap: 24,
+        padding: '28px 16px',
+        background: paper2,
+        borderRight: `1px solid ${border}`,
+      }}
     >
-      <div className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ background: 'var(--color-sage-500)' }}>
-            <Home size={16} />
+      {/* Brand */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
+        <div>
+          <div style={{ fontSize: 9, letterSpacing: '0.22em', color: inkSoft, textTransform: 'uppercase', marginBottom: 2 }}>
+            dein digitales Zuhause
           </div>
-          <span className="font-semibold text-sm">FamilyBoard</span>
+          <div style={{ fontFamily: '"Instrument Serif", serif', fontSize: 26, color: accent, lineHeight: 1 }}>
+            Famly<span style={{ color: 'oklch(65% 0.14 20)' }}>.</span>
+          </div>
         </div>
         <button
           onClick={onClose}
-          className="md:hidden p-1 rounded-lg"
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-stone-700)' }}
+          className="md:hidden"
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: inkSoft, padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'unset', minWidth: 'unset' }}
           aria-label="Menü schließen"
         >
-          <X size={16} />
+          <X size={18} />
         </button>
       </div>
 
-      <nav className="flex flex-col gap-0.5 flex-1">
-        {user?.family_name && (
-          <div className="mb-6 px-2">
-            <div className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-stone-50)' }}>
-              Familie
-            </div>
-            <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/50 border border-stone-300">
-              <span className="text-sm font-semibold truncate">{user.family_name}</span>
-              {user.join_code && (
-                <button
-                  onClick={onInviteClick}
-                  className="p-1.5 rounded-lg hover:bg-white transition-colors text-sage-600"
-                  style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
-                  title="Einladen"
-                >
-                  <UserPlus size={16} />
-                </button>
-              )}
-            </div>
+      {/* Family card */}
+      {user?.family_name && (
+        <div style={{ padding: '10px 12px', background: paper, borderRadius: 8, border: `1px solid ${border}` }}>
+          <div style={{ fontSize: 9, letterSpacing: '0.2em', color: inkSoft, textTransform: 'uppercase', marginBottom: 4 }}>Familie</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 500, color: ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.family_name}
+            </span>
+            {user.join_code && (
+              <button
+                onClick={onInviteClick}
+                title="Einladen"
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: accent, padding: 4, display: 'flex', minHeight: 'unset', minWidth: 'unset' }}
+              >
+                <UserPlus size={15} />
+              </button>
+            )}
           </div>
-        )}
+        </div>
+      )}
 
-        <div className="text-xs font-semibold uppercase tracking-widest px-2 mb-1" style={{ color: 'var(--color-stone-500)' }}>
+      {/* Nav */}
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+        <div style={{ fontSize: 9, letterSpacing: '0.2em', color: inkSoft, textTransform: 'uppercase', padding: '0 8px', marginBottom: 4 }}>
           Übersicht
         </div>
         {navItems.map((item) => (
@@ -87,23 +105,28 @@ export default function Sidebar({ isOpen, onClose, onInviteClick }: SidebarProps
             to={item.to}
             end
             onClick={onClose}
-            className={({ isActive }) =>
-              `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${isActive ? 'font-medium' : ''}`
-            }
             style={({ isActive }) => ({
-              background: isActive ? 'white' : 'transparent',
-              color: isActive ? 'var(--color-stone-900)' : 'var(--color-stone-700)',
-              boxShadow: isActive ? '0 1px 3px oklch(0 0 0 / 0.06)' : 'none',
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '9px 10px', borderRadius: 6, fontSize: 13, textDecoration: 'none',
+              background: isActive ? paper : 'transparent',
+              color: isActive ? ink : ink2,
+              fontWeight: isActive ? 500 : 400,
+              border: isActive ? `1px solid ${border}` : '1px solid transparent',
+              transition: 'all 150ms',
             })}
           >
-            <item.icon size={16} />
-            {item.label}
+            {({ isActive }) => (
+              <>
+                <item.icon size={15} color={isActive ? accent : ink2} />
+                {item.label}
+              </>
+            )}
           </NavLink>
         ))}
 
         {isAdmin && (
           <>
-            <div className="text-xs font-semibold uppercase tracking-widest px-2 mb-1 mt-5" style={{ color: 'var(--color-stone-500)' }}>
+            <div style={{ fontSize: 9, letterSpacing: '0.2em', color: inkSoft, textTransform: 'uppercase', padding: '0 8px', marginBottom: 4, marginTop: 20 }}>
               Verwaltung
             </div>
             {adminItems.map((item) => (
@@ -111,17 +134,22 @@ export default function Sidebar({ isOpen, onClose, onInviteClick }: SidebarProps
                 key={item.to}
                 to={item.to}
                 onClick={onClose}
-                className={({ isActive }) =>
-                  `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${isActive ? 'font-medium' : ''}`
-                }
                 style={({ isActive }) => ({
-                  background: isActive ? 'white' : 'transparent',
-                  color: isActive ? 'var(--color-stone-900)' : 'var(--color-stone-700)',
-                  boxShadow: isActive ? '0 1px 3px oklch(0 0 0 / 0.06)' : 'none',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 10px', borderRadius: 6, fontSize: 13, textDecoration: 'none',
+                  background: isActive ? paper : 'transparent',
+                  color: isActive ? ink : ink2,
+                  fontWeight: isActive ? 500 : 400,
+                  border: isActive ? `1px solid ${border}` : '1px solid transparent',
+                  transition: 'all 150ms',
                 })}
               >
-                <item.icon size={16} />
-                {item.label}
+                {({ isActive }) => (
+                  <>
+                    <item.icon size={15} color={isActive ? accent : ink2} />
+                    {item.label}
+                  </>
+                )}
               </NavLink>
             ))}
             {isSystemAdmin && systemAdminItems.map((item) => (
@@ -129,36 +157,55 @@ export default function Sidebar({ isOpen, onClose, onInviteClick }: SidebarProps
                 key={item.to}
                 to={item.to}
                 onClick={onClose}
-                className={({ isActive }) =>
-                  `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${isActive ? 'font-medium' : ''}`
-                }
                 style={({ isActive }) => ({
-                  background: isActive ? 'white' : 'transparent',
-                  color: isActive ? 'var(--color-stone-900)' : 'var(--color-stone-700)',
-                  boxShadow: isActive ? '0 1px 3px oklch(0 0 0 / 0.06)' : 'none',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 10px', borderRadius: 6, fontSize: 13, textDecoration: 'none',
+                  background: isActive ? paper : 'transparent',
+                  color: isActive ? ink : ink2,
+                  fontWeight: isActive ? 500 : 400,
+                  border: isActive ? `1px solid ${border}` : '1px solid transparent',
+                  transition: 'all 150ms',
                 })}
               >
-                <item.icon size={16} />
-                {item.label}
+                {({ isActive }) => (
+                  <>
+                    <item.icon size={15} color={isActive ? accent : ink2} />
+                    {item.label}
+                  </>
+                )}
               </NavLink>
             ))}
           </>
         )}
       </nav>
 
+      {/* User / Logout */}
       <button
         onClick={handleLogout}
-        className="flex items-center gap-2.5 p-3 rounded-xl text-left transition-colors w-full"
-        style={{ background: 'white', border: 'none', cursor: 'pointer', boxShadow: '0 1px 3px oklch(0 0 0 / 0.05)' }}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 12px', borderRadius: 8, textAlign: 'left',
+          background: paper, border: `1px solid ${border}`, cursor: 'pointer',
+          width: '100%', minHeight: 'unset',
+        }}
         title="Abmelden"
       >
-        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0" style={{ background: 'var(--color-sage-500)' }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: accent, color: paper, fontSize: 13, fontWeight: 500,
+        }}>
           {user?.username?.[0]?.toUpperCase() ?? '?'}
         </div>
-        <div className="min-w-0">
-          <div className="text-sm font-medium truncate">{user?.username ?? 'Gast'}</div>
-          <div className="text-xs truncate" style={{ color: 'var(--color-stone-600)' }}>{user?.role ?? 'Nutzer'}</div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: 12, fontWeight: 500, color: ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {user?.username ?? 'Gast'}
+          </div>
+          <div style={{ fontSize: 11, color: inkSoft, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {user?.role ?? 'Nutzer'}
+          </div>
         </div>
+        <LogOut size={14} color={inkSoft} />
       </button>
     </aside>
   )
