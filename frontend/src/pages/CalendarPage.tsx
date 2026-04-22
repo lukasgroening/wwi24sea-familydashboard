@@ -69,7 +69,9 @@ export default function CalendarPage() {
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() })
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [showSourceModal, setShowSourceModal] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+  const [sourceDeleteConfirm, setSourceDeleteConfirm] = useState<number | null>(null)
   const [form, setForm] = useState<NewEventForm>({
     title: '',
     description: '',
@@ -78,13 +80,21 @@ export default function CalendarPage() {
     location: '',
     color: COLOR_OPTIONS[0].value,
   })
+  const [sourceForm, setSourceForm] = useState({ name: '', url: '', color: COLOR_OPTIONS[0].value })
   const [formError, setFormError] = useState('')
+  const [sourceError, setSourceError] = useState('')
 
   const isAdmin = user?.role === 'Familien-Administrator' || user?.role === 'System-Administrator'
 
   const { data: events = [], isLoading, error } = useQuery<CalendarEvent[]>({
     queryKey: ['calendar-events'],
     queryFn: () => api.get('/api/calendar/events').then((r) => r.data),
+  })
+
+  const { data: sources = [] } = useQuery<any[]>({
+    queryKey: ['calendar-sources'],
+    queryFn: () => api.get('/api/calendar/sources').then((r) => r.data),
+    enabled: isAdmin,
   })
 
   const createMutation = useMutation({
@@ -111,6 +121,26 @@ export default function CalendarPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] })
       setDeleteConfirm(null)
+    },
+  })
+
+  const addSourceMutation = useMutation({
+    mutationFn: (data: any) => api.post('/api/calendar/sources', data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-sources'] })
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] })
+      setSourceForm({ name: '', url: '', color: COLOR_OPTIONS[0].value })
+      setSourceError('')
+    },
+    onError: () => setSourceError('Fehler beim Hinzufügen der Quelle.'),
+  })
+
+  const deleteSourceMutation = useMutation({
+    mutationFn: (id: number) => api.delete(`/api/calendar/sources/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-sources'] })
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] })
+      setSourceDeleteConfirm(null)
     },
   })
 
@@ -194,15 +224,26 @@ export default function CalendarPage() {
           <h1 className="text-xl font-semibold">Kalender</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-stone-600)' }}>Familientermine auf einen Blick</p>
         </div>
-        {isAdmin && (
-          <button
-            onClick={openCreateModal}
-            className="px-4 py-2 rounded-xl text-white text-sm font-medium"
-            style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            + Termin hinzufügen
-          </button>
-        )}
+        <div className="flex gap-2">
+          {isAdmin && (
+            <button
+              onClick={() => setShowSourceModal(true)}
+              className="px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+              style={{ background: 'var(--color-stone-100)', color: 'var(--color-stone-700)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              ⚙️ Quellen
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={openCreateModal}
+              className="px-4 py-2 rounded-xl text-white text-sm font-medium"
+              style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              + Termin hinzufügen
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -481,6 +522,82 @@ export default function CalendarPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Source Management Modal */}
+      {showSourceModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0 / 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowSourceModal(false) }}
+        >
+          <div
+            className="rounded-2xl p-6 flex flex-col gap-4 w-full"
+            style={{ background: 'white', border: '1px solid var(--color-stone-border)', boxShadow: '0 8px 32px oklch(0 0 0 / 0.12)', maxWidth: '540px' }}
+          >
+            <div>
+              <div className="text-base font-semibold">Externe Kalenderquellen</div>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--color-stone-600)' }}>Integriere Google Kalender oder andere .ics Feeds</div>
+            </div>
+
+            <div className="flex flex-col gap-3 max-h-64 overflow-y-auto pr-1">
+              {sources.length === 0 && <p className="text-sm italic text-center py-4" style={{ color: 'var(--color-stone-500)' }}>Noch keine Quellen hinzugefügt.</p>}
+              {sources.map((s) => (
+                <div key={s.id} className="p-3 rounded-xl border flex items-center justify-between gap-3" style={{ borderColor: 'var(--color-stone-border)', background: 'var(--color-stone-50)' }}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{s.name}</div>
+                      <div className="text-[10px] truncate opacity-60" style={{ color: 'var(--color-stone-600)' }}>{s.url}</div>
+                    </div>
+                  </div>
+                  {sourceDeleteConfirm === s.id ? (
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button onClick={() => deleteSourceMutation.mutate(s.id)} className="px-2 py-1 rounded-lg text-[10px] font-bold bg-red-100 text-red-700">Löschen</button>
+                      <button onClick={() => setSourceDeleteConfirm(null)} className="px-2 py-1 rounded-lg text-[10px] font-bold bg-stone-100 text-stone-700">X</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setSourceDeleteConfirm(s.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors">
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: 'var(--color-stone-500)' }}>Neue Quelle hinzufügen</div>
+              <form onSubmit={(e) => {
+                e.preventDefault()
+                if (!sourceForm.name || !sourceForm.url) return
+                addSourceMutation.mutate(sourceForm)
+              }} className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <input style={inputStyle} placeholder="Name (z.B. Google Papa)" value={sourceForm.name} onChange={(e) => setSourceForm(f => ({ ...f, name: e.target.value }))} required />
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <select style={inputStyle} value={sourceForm.color} onChange={(e) => setSourceForm(f => ({ ...f, color: e.target.value }))}>
+                        {COLOR_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </select>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl flex-shrink-0 border" style={{ background: sourceForm.color, borderColor: 'var(--color-stone-border)' }} />
+                  </div>
+                </div>
+                <input style={inputStyle} placeholder="Öffentliche .ics URL" value={sourceForm.url} onChange={(e) => setSourceForm(f => ({ ...f, url: e.target.value }))} required />
+                
+                <ErrorAlert message={sourceError} />
+                
+                <div className="flex gap-2">
+                  <button type="submit" disabled={addSourceMutation.isPending} className="flex-1 px-4 py-2 rounded-xl text-white text-sm font-medium disabled:opacity-60" style={{ background: 'var(--color-sage-500)', border: 'none', cursor: 'pointer' }}>
+                    {addSourceMutation.isPending ? 'Wird hinzugefügt...' : 'Quelle hinzufügen'}
+                  </button>
+                  <button type="button" onClick={() => setShowSourceModal(false)} className="px-4 py-2 rounded-xl text-sm font-medium" style={{ background: 'var(--color-stone-100)', color: 'var(--color-stone-700)', border: 'none', cursor: 'pointer' }}>
+                    Schließen
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
