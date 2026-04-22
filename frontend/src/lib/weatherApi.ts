@@ -23,7 +23,7 @@ export interface WeatherData {
 /* ── Backend Weather Fetch ────────────────────────── */
 
 export async function fetchWeather(city: string): Promise<WeatherData> {
-  const { data } = await api.get<WeatherData>('/api/weather', {
+  const { data } = await api.get<WeatherData>('/api/weather/', {
     params: { city },
   })
   return data
