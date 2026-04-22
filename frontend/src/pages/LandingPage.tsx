@@ -110,7 +110,7 @@ function House({ doorOpen, pal }: { doorOpen: boolean; pal: typeof PALETTES.day 
 }
 
 function Landscape({ pal, timeOfDay }: { pal: typeof PALETTES.day; timeOfDay: 'day' | 'dusk' | 'night' }) {
-  const stars = useMemo(() => Array.from({ length: 35 }).map(() => ({ x: Math.random() * W, y: Math.random() * 260, r: Math.random() * 1.4 + 0.6, d: Math.random() * 3 })), [])
+  const stars = useMemo(() => Array.from({ length: 35 }).map((_, i) => ({ x: ((i * 137.5) % W), y: ((i * 73.1) % 260), r: 0.6 + (i % 5) * 0.2, d: (i % 4) })), [])
   return (
     <g>
       {timeOfDay === 'night' && stars.map((s, i) => (
@@ -161,7 +161,7 @@ type LoginPhase = 'idle' | 'running' | 'entering' | 'done'
 export default function LandingPage() {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuthStore()
-  const timeOfDay = useMemo(getTimeOfDay, [])
+  const timeOfDay = useMemo(() => getTimeOfDay(), [])
   const pal = PALETTES[timeOfDay]
 
   const [phase, setPhase] = useState<LoginPhase>('idle')
@@ -252,6 +252,7 @@ export default function LandingPage() {
   const handleDashboard = () => navigate('/dashboard')
 
   const doorOpen = phase === 'running' || phase === 'entering' || phase === 'done'
+  // eslint-disable-next-line react-hooks/refs
   const visibleChars = charsRef.current.filter(c => !c.atHome)
   const t = tRef.current
 
@@ -272,6 +273,7 @@ export default function LandingPage() {
       >
         <Landscape pal={pal} timeOfDay={timeOfDay} />
         <House doorOpen={doorOpen} pal={pal} />
+        {/* eslint-disable-next-line react-hooks/refs */}
         {visibleChars.map((c, i) => (
           <StickFigure
             key={c.id}

@@ -91,7 +91,7 @@ export default function CalendarPage() {
     queryFn: () => api.get('/api/calendar/events').then((r) => r.data),
   })
 
-  const { data: sources = [] } = useQuery<any[]>({
+  const { data: sources = [] } = useQuery<Record<string, unknown>[]>({
     queryKey: ['calendar-sources'],
     queryFn: () => api.get('/api/calendar/sources').then((r) => r.data),
     enabled: isAdmin,
@@ -125,7 +125,7 @@ export default function CalendarPage() {
   })
 
   const addSourceMutation = useMutation({
-    mutationFn: (data: any) => api.post('/api/calendar/sources', data).then((r) => r.data),
+    mutationFn: (data: Record<string, unknown>) => api.post('/api/calendar/sources', data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendar-sources'] })
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] })

@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, forwardRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { X, Cloud, Calendar, CheckSquare, LayoutList, Plus } from 'lucide-react'
 import { ReactGridLayout } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
@@ -94,7 +93,6 @@ const WidgetShell = forwardRef<HTMLDivElement, WidgetShellProps>(
 )
 
 export default function DashboardPage() {
-  const navigate = useNavigate()
   const { user } = useAuthStore()
   const {
     widgets: dashboardWidgets,
