@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ScheduleWidget from '../widgets/ScheduleWidget'
 
 // api mocken
@@ -12,6 +13,17 @@ vi.mock('../lib/api', () => ({
 import api from '../lib/api'
 const mockApi = api as unknown as { get: ReturnType<typeof vi.fn> }
 
+function renderScheduleWidget() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ScheduleWidget />
+    </QueryClientProvider>
+  )
+}
+
 describe('ScheduleWidget', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -20,7 +32,7 @@ describe('ScheduleWidget', () => {
   it('zeigt "Lade Stundenplan…" während geladen wird', () => {
     mockApi.get.mockReturnValue(new Promise(() => {}))
 
-    render(<ScheduleWidget />)
+    renderScheduleWidget()
 
     expect(screen.getByText('Lade Stundenplan…')).toBeInTheDocument()
   })
@@ -28,7 +40,7 @@ describe('ScheduleWidget', () => {
   it('zeigt "Kein Unterricht" wenn keine Einträge vorhanden sind', async () => {
     mockApi.get.mockResolvedValue({ data: [] })
 
-    render(<ScheduleWidget />)
+    renderScheduleWidget()
 
     await waitFor(() => {
       expect(screen.getByText('Kein Unterricht')).toBeInTheDocument()
@@ -38,7 +50,7 @@ describe('ScheduleWidget', () => {
   it('zeigt die Wochentag-Buttons (Mo, Di, Mi, Do, Fr)', async () => {
     mockApi.get.mockResolvedValue({ data: [] })
 
-    render(<ScheduleWidget />)
+    renderScheduleWidget()
 
     await waitFor(() => {
       expect(screen.getByText('Mo')).toBeInTheDocument()
@@ -79,7 +91,7 @@ describe('ScheduleWidget', () => {
       ],
     })
 
-    render(<ScheduleWidget />)
+    renderScheduleWidget()
 
     // Klick auf "Mo" um Montag anzuzeigen
     await waitFor(() => {
@@ -119,7 +131,7 @@ describe('ScheduleWidget', () => {
       ],
     })
 
-    render(<ScheduleWidget />)
+    renderScheduleWidget()
 
     // Zu Dienstag wechseln
     await waitFor(() => {
@@ -150,7 +162,7 @@ describe('ScheduleWidget', () => {
       ],
     })
 
-    render(<ScheduleWidget />)
+    renderScheduleWidget()
 
     // Zu Montag wechseln
     await waitFor(() => {
@@ -167,7 +179,7 @@ describe('ScheduleWidget', () => {
   it('zeigt eine Fehlermeldung wenn die API fehlschlägt', async () => {
     mockApi.get.mockRejectedValue(new Error('Netzwerkfehler'))
 
-    render(<ScheduleWidget />)
+    renderScheduleWidget()
 
     await waitFor(() => {
       expect(screen.getByText('Stundenplan konnte nicht geladen werden.')).toBeInTheDocument()
@@ -196,7 +208,7 @@ describe('ScheduleWidget', () => {
       ],
     })
 
-    render(<ScheduleWidget />)
+    renderScheduleWidget()
 
     await waitFor(() => {
       expect(screen.getByText('Mo')).toBeInTheDocument()

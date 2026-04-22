@@ -125,7 +125,7 @@ describe('CalendarWidget', () => {
     renderCalendar()
 
     await waitFor(() => {
-      expect(screen.getByText('Alle anzeigen →')).toBeInTheDocument()
+      expect(screen.getByText(/Alle anzeigen/)).toBeInTheDocument()
     })
   })
 
@@ -135,10 +135,10 @@ describe('CalendarWidget', () => {
     renderCalendar()
 
     await waitFor(() => {
-      expect(screen.getByText('Alle anzeigen →')).toBeInTheDocument()
+      expect(screen.getByText(/Alle anzeigen/)).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByText('Alle anzeigen →'))
+    fireEvent.click(screen.getByText(/Alle anzeigen/))
 
     expect(mockNavigate).toHaveBeenCalledWith('/calendar')
   })

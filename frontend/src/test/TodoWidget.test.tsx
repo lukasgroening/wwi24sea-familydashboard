@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import TodoWidget from '../widgets/TodoWidget'
 
 // api mocken
@@ -21,6 +22,17 @@ const mockApi = api as unknown as {
   delete: ReturnType<typeof vi.fn>
 }
 
+function renderTodoWidget() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <TodoWidget />
+    </QueryClientProvider>
+  )
+}
+
 describe('TodoWidget', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -29,7 +41,7 @@ describe('TodoWidget', () => {
   it('zeigt "Lade Todos..." während die Daten geladen werden', () => {
     mockApi.get.mockReturnValue(new Promise(() => {}))
 
-    render(<TodoWidget />)
+    renderTodoWidget()
 
     expect(screen.getByText('Lade Todos...')).toBeInTheDocument()
   })
@@ -37,7 +49,7 @@ describe('TodoWidget', () => {
   it('zeigt "Keine Todos vorhanden" wenn die Liste leer ist', async () => {
     mockApi.get.mockResolvedValue({ data: [] })
 
-    render(<TodoWidget />)
+    renderTodoWidget()
 
     await waitFor(() => {
       expect(screen.getByText('Keine Todos vorhanden')).toBeInTheDocument()
@@ -52,7 +64,7 @@ describe('TodoWidget', () => {
       ],
     })
 
-    render(<TodoWidget />)
+    renderTodoWidget()
 
     await waitFor(() => {
       expect(screen.getByText('Einkaufen gehen')).toBeInTheDocument()
@@ -67,7 +79,7 @@ describe('TodoWidget', () => {
       ],
     })
 
-    render(<TodoWidget />)
+    renderTodoWidget()
 
     await waitFor(() => {
       const kinderElements = screen.getAllByText('Kinder')
@@ -82,7 +94,7 @@ describe('TodoWidget', () => {
       data: { id: 3, title: 'Arzt anrufen', is_completed: false, tag: null },
     })
 
-    render(<TodoWidget />)
+    renderTodoWidget()
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Neue Aufgabe...')).toBeInTheDocument()
@@ -108,7 +120,7 @@ describe('TodoWidget', () => {
       data: { id: 4, title: 'Wäsche waschen', is_completed: false, tag: null },
     })
 
-    render(<TodoWidget />)
+    renderTodoWidget()
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Neue Aufgabe...')).toBeInTheDocument()
@@ -131,7 +143,7 @@ describe('TodoWidget', () => {
     })
     mockApi.patch.mockResolvedValue({ data: {} })
 
-    render(<TodoWidget />)
+    renderTodoWidget()
 
     await waitFor(() => {
       expect(screen.getByText('Sport machen')).toBeInTheDocument()
@@ -149,7 +161,7 @@ describe('TodoWidget', () => {
   it('deaktiviert den Hinzufügen-Button wenn das Eingabefeld leer ist', async () => {
     mockApi.get.mockResolvedValue({ data: [] })
 
-    render(<TodoWidget />)
+    renderTodoWidget()
 
     await waitFor(() => {
       expect(screen.getByTitle('Todo hinzufügen')).toBeInTheDocument()
@@ -162,7 +174,7 @@ describe('TodoWidget', () => {
   it('zeigt die Tag-Auswahl-Buttons (Eltern, Au-Pair, Kinder)', async () => {
     mockApi.get.mockResolvedValue({ data: [] })
 
-    render(<TodoWidget />)
+    renderTodoWidget()
 
     await waitFor(() => {
       expect(screen.getByText('Eltern')).toBeInTheDocument()
