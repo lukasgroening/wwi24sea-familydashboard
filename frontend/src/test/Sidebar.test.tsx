@@ -14,7 +14,7 @@ vi.mock('react-router-dom', async () => {
 function renderSidebar(isOpen = true, onClose = vi.fn()) {
   return render(
     <MemoryRouter>
-      <Sidebar isOpen={isOpen} onClose={onClose} />
+      <Sidebar isOpen={isOpen} onClose={onClose} onInviteClick={vi.fn()} />
     </MemoryRouter>
   )
 }
@@ -27,14 +27,14 @@ describe('Sidebar', () => {
 
   // Anzeige
 
-  it('zeigt den App-Namen "FamilyBoard" an', () => {
+  it('zeigt den App-Namen "Famly" an', () => {
     useAuthStore.setState({
       user: { id: 1, username: 'Max', role: 'Nutzer' },
       token: 'abc',
     })
     renderSidebar()
 
-    expect(screen.getByText('FamilyBoard')).toBeInTheDocument()
+    expect(screen.getByText(/Famly/)).toBeInTheDocument()
   })
 
   it('zeigt den Benutzernamen an', () => {
