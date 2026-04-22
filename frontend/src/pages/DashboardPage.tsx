@@ -171,7 +171,6 @@ export default function DashboardPage() {
         isDraggable={true}
         compactType="vertical"
         margin={[12, 12]}
-        useCSSTransforms={true}
       >
         {dashboardWidgets.map((instance) => {
           const config = WIDGETS.find((w) => w.id === instance.widgetId)

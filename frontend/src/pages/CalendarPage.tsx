@@ -9,6 +9,13 @@ const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 
+interface CalendarSource {
+  id: number
+  name: string
+  url: string
+  color: string
+}
+
 interface CalendarEvent {
   id: number | null
   title: string
@@ -91,7 +98,7 @@ export default function CalendarPage() {
     queryFn: () => api.get('/api/calendar/events').then((r) => r.data),
   })
 
-  const { data: sources = [] } = useQuery<Record<string, unknown>[]>({
+  const { data: sources = [] } = useQuery<CalendarSource[]>({
     queryKey: ['calendar-sources'],
     queryFn: () => api.get('/api/calendar/sources').then((r) => r.data),
     enabled: isAdmin,
@@ -125,7 +132,7 @@ export default function CalendarPage() {
   })
 
   const addSourceMutation = useMutation({
-    mutationFn: (data: Record<string, unknown>) => api.post('/api/calendar/sources', data).then((r) => r.data),
+    mutationFn: (data: Omit<CalendarSource, 'id'>) => api.post('/api/calendar/sources', data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendar-sources'] })
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] })
