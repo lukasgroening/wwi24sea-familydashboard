@@ -1,4 +1,20 @@
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: family_db
+    restart: always
+    environment:
+      - POSTGRES_USER=famly_user
+      - POSTGRES_PASSWORD=famly_pass
+      - POSTGRES_DB=family_dashboard
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U famly_user -d family_dashboard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -9,9 +25,10 @@ services:
       - ./backend/.env
     environment:
       - CORS_ORIGINS=http://${HOST:-localhost}:8401
-      - DB_PATH=/app/data/database.db
-    volumes:
-      - backend_data:/app/data
+      - DATABASE_URL=postgresql://famly_user:famly_pass@db:5432/family_dashboard
+    depends_on:
+      db:
+        condition: service_healthy
     command: uvicorn main:app --host 0.0.0.0 --port 8000
 
   frontend:
@@ -27,4 +44,5 @@ services:
       - backend
 
 volumes:
+  postgres_data:
   backend_data:
