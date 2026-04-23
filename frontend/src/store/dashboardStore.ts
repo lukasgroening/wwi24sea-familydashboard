@@ -29,11 +29,12 @@ function isAdminRole(role: Role | undefined): boolean {
   return role === 'Familien-Administrator' || role === 'System-Administrator'
 }
 
-const DEFAULT_LAYOUTS: Record<string, { w: number; h: number }> = {
-  calendar: { w: 5, h: 4 },
-  weather: { w: 3, h: 4 },
-  todo: { w: 4, h: 2 },
-  schedule: { w: 7, h: 2 },
+const DEFAULT_LAYOUTS: Record<string, { w: number; h: number; minW: number; minH: number }> = {
+  calendar:  { w: 6, h: 5, minW: 4, minH: 4 },
+  weather:   { w: 3, h: 4, minW: 3, minH: 4 },
+  todo:      { w: 5, h: 3, minW: 3, minH: 3 },
+  schedule:  { w: 8, h: 3, minW: 4, minH: 3 },
+  minigame:  { w: 5, h: 4, minW: 4, minH: 3 },
 }
 
 const DEFAULT_WEATHER_SETTINGS: Record<string, unknown> = {
@@ -54,6 +55,20 @@ const DEFAULT_CALENDAR_SETTINGS: Record<string, unknown> = {
   weekEndHour: 22,
 }
 
+function clampLayouts(layouts: LayoutItem[], widgets: DashboardWidgetInstance[]): LayoutItem[] {
+  return layouts.map((l) => {
+    const widgetId = widgets.find(w => w.instanceId === l.i)?.widgetId
+    const min = widgetId ? DEFAULT_LAYOUTS[widgetId] : undefined
+    return {
+      ...l,
+      minW: min?.minW ?? 2,
+      minH: min?.minH ?? 2,
+      w: Math.max(l.w, min?.minW ?? 2),
+      h: Math.max(l.h, min?.minH ?? 2),
+    }
+  })
+}
+
 function getDefaultSettings(widgetId: string): Record<string, unknown> {
   if (widgetId === 'weather') return { ...DEFAULT_WEATHER_SETTINGS }
   if (widgetId === 'calendar') return { ...DEFAULT_CALENDAR_SETTINGS }
@@ -68,10 +83,10 @@ const defaultWidgets: DashboardWidgetInstance[] = [
 ]
 
 const defaultLayouts: LayoutItem[] = [
-  { i: 'weather-default', x: 0, y: 0, w: 3, h: 4 },
-  { i: 'calendar-default', x: 3, y: 0, w: 5, h: 4 },
-  { i: 'todo-default', x: 8, y: 0, w: 4, h: 2 },
-  { i: 'schedule-default', x: 0, y: 4, w: 7, h: 2 },
+  { i: 'weather-default',   x: 0, y: 0, w: 3, h: 4, minW: 3, minH: 4 },
+  { i: 'calendar-default',  x: 3, y: 0, w: 6, h: 5, minW: 4, minH: 4 },
+  { i: 'todo-default',      x: 9, y: 0, w: 3, h: 3, minW: 3, minH: 3 },
+  { i: 'schedule-default',  x: 0, y: 4, w: 8, h: 3, minW: 4, minH: 3 },
 ]
 
 /** Wandelt den Store-State in das Backend-Format um */
@@ -101,14 +116,19 @@ function backendToState(data: Array<{ id: number; type: string; x: number; y: nu
     rowSpan: item.h,
     settings: item.settings ?? getDefaultSettings(item.type),
   }))
-  const layouts: LayoutItem[] = data.map((item) => ({
-    i: `${item.type}-${item.id}`,
-    x: item.x,
-    y: item.y,
-    w: item.w,
-    h: item.h,
-  }))
-  return { widgets, layouts }
+  const layouts: LayoutItem[] = data.map((item) => {
+    const defaults = DEFAULT_LAYOUTS[item.type]
+    return {
+      i: `${item.type}-${item.id}`,
+      x: item.x,
+      y: item.y,
+      w: item.w,
+      h: item.h,
+      minW: defaults?.minW ?? 2,
+      minH: defaults?.minH ?? 2,
+    }
+  })
+  return { widgets, layouts: clampLayouts(layouts, widgets) }
 }
 
 export const useDashboardStore = create<DashboardState>()(
@@ -123,6 +143,8 @@ export const useDashboardStore = create<DashboardState>()(
           if (data && data.length > 0) {
             const { widgets, layouts } = backendToState(data)
             set({ widgets, layouts })
+            // Falls Clamping Größen korrigiert hat → direkt zurück speichern
+            await get().saveToBackend()
           } else {
             // Backend leer -> Jetzt erst Defaults setzen und speichern
             const user = (await import('./authStore')).useAuthStore.getState().user
@@ -153,7 +175,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       addWidget: (widgetId, settings) => {
-        const size = DEFAULT_LAYOUTS[widgetId] ?? { w: 4, h: 2 }
+        const size = DEFAULT_LAYOUTS[widgetId] ?? { w: 4, h: 2, minW: 2, minH: 2 }
         const instanceId = `${widgetId}-${Date.now()}`
         const instance: DashboardWidgetInstance = {
           instanceId,
@@ -168,6 +190,8 @@ export const useDashboardStore = create<DashboardState>()(
           y: Infinity,
           w: size.w,
           h: size.h,
+          minW: size.minW,
+          minH: size.minH,
         }
         set((state) => ({
           widgets: [...state.widgets, instance],
@@ -205,7 +229,13 @@ export const useDashboardStore = create<DashboardState>()(
     }),
     {
       name: 'dashboard',
+      version: 2,
       partialize: (state) => ({ widgets: state.widgets, layouts: state.layouts }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.layouts = clampLayouts(state.layouts, state.widgets)
+        }
+      },
     },
   ),
 )

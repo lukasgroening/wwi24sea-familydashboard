@@ -185,27 +185,25 @@ export default function TodoWidget() {
           </button>
         </div>
 
-        <div className="flex gap-2 items-center">
-          <div className="flex gap-2 flex-wrap flex-1">
-            {TAG_OPTIONS.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => handleTagClick(tag)}
-                className="px-3 py-1 rounded text-xs transition-colors border"
-                style={{
-                  background: selectedTag === tag ? COLORS.primary : COLORS.background,
-                  color: selectedTag === tag ? COLORS.white : COLORS.textPrimary,
-                  borderColor: selectedTag === tag ? COLORS.primary : COLORS.border,
-                }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
+        <div className="flex gap-2 items-center overflow-x-auto" style={{ flexShrink: 0 }}>
+          {TAG_OPTIONS.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => handleTagClick(tag)}
+              className="px-3 py-1 rounded text-xs transition-colors border flex-shrink-0"
+              style={{
+                background: selectedTag === tag ? COLORS.primary : COLORS.background,
+                color: selectedTag === tag ? COLORS.white : COLORS.textPrimary,
+                borderColor: selectedTag === tag ? COLORS.primary : COLORS.border,
+              }}
+            >
+              {tag}
+            </button>
+          ))}
           <span className="text-xs" style={{ color: COLORS.textMuted }}>oder</span>
           <input
-            className="px-2 py-1 rounded text-xs outline-none border w-24"
-            style={{ ...inputStyle, borderColor: customTag ? COLORS.borderActive : COLORS.border }}
+            className="px-2 py-1 rounded text-xs outline-none border"
+            style={{ ...inputStyle, width: 96, borderColor: customTag ? COLORS.borderActive : COLORS.border }}
             placeholder="Eigenes Tag"
             value={customTag}
             onChange={(e) => handleCustomTagChange(e.target.value)}
