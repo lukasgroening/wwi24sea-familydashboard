@@ -9,8 +9,6 @@ services:
       - POSTGRES_DB=family_dashboard
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U famly_user -d family_dashboard"]
       interval: 5s

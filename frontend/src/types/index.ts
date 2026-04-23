@@ -40,5 +40,6 @@ export interface DashboardWidgetInstance {
 }
 
 export interface WidgetProps {
-  settings?: Record<string, unknown>
+  settings: Record<string, unknown>
+  onSettingsChange: (settings: Record<string, unknown>) => void
 }

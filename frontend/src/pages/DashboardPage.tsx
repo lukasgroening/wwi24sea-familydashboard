@@ -7,7 +7,6 @@ import { WIDGETS } from '../widgets'
 import { useAuthStore } from '../store/authStore'
 import { useDashboardStore } from '../store/dashboardStore'
 import type { Role } from '../types'
-import WeatherWidget from '../widgets/WeatherWidget'
 
 const ink = '#2a241d'
 const ink2 = '#554a3c'
@@ -200,7 +199,9 @@ export default function DashboardPage() {
           const config = WIDGETS.find((w) => w.id === instance.widgetId)
           if (!config) return <div key={instance.instanceId} />
           if (!canSeeWidget(config.requiredRole, user?.role)) return <div key={instance.instanceId} />
+          
           const isWeather = instance.widgetId === 'weather'
+          
           return (
             <WidgetShell
               key={instance.instanceId}
@@ -209,14 +210,10 @@ export default function DashboardPage() {
               title={isWeather ? undefined : config.name}
               isAdmin={isAdmin}
             >
-              {isWeather ? (
-                <WeatherWidget
-                  settings={instance.settings}
-                  onSettingsChange={(s) => updateWidgetSettings(instance.instanceId, s)}
-                />
-              ) : (
-                <config.component />
-              )}
+              <config.component 
+                settings={instance.settings}
+                onSettingsChange={(s) => updateWidgetSettings(instance.instanceId, s)}
+              />
             </WidgetShell>
           )
         })}

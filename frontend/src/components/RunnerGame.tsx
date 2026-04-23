@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 
 function rrect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
@@ -55,12 +55,12 @@ export default function RunnerGame({ onClose, inkColor, paperColor, onGameOver }
   const [score, setScore] = useState(0)
   const rafRef = useRef(0)
 
-  const jump = () => {
+  const jump = useCallback(() => {
     const s = stateRef.current
     if (!s.started) { s.started = true; return }
     if (s.dead) { restart(); return }
     if (s.onGround) { s.vy = JUMP_V; s.onGround = false }
-  }
+  }, [])
 
   const restart = () => {
     const s = stateRef.current
@@ -84,7 +84,7 @@ export default function RunnerGame({ onClose, inkColor, paperColor, onGameOver }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [jump, onClose])
 
   useEffect(() => {
     const canvas = canvasRef.current!
@@ -289,7 +289,7 @@ export default function RunnerGame({ onClose, inkColor, paperColor, onGameOver }
 
     rafRef.current = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [inkColor, paperColor])
+  }, [inkColor, paperColor, onGameOver])
 
   return (
     <div
