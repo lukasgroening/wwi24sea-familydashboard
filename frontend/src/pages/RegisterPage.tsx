@@ -1,13 +1,24 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Home, Users, UserPlus, Clipboard, Check } from 'lucide-react'
 import axios from 'axios'
 import api from '../lib/api'
+import { useAuthStore } from '../store/authStore'
 import ErrorAlert from '../components/ErrorAlert'
 
 type RegisterMode = 'join' | 'create'
 
 export default function RegisterPage() {
+  const navigate = useNavigate()
+  const { isAuthenticated } = useAuthStore()
+
+  // Sofort zum Dashboard, wenn bereits eingeloggt
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
+
   const [mode, setMode] = useState<RegisterMode>('join')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -15,7 +26,6 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [successData, setSuccessData] = useState<{ username: string; join_code?: string; family_name?: string } | null>(null)
-  const navigate = useNavigate()
 
   const handleSubmit: React.ComponentProps<'form'>['onSubmit'] = async (e) => {
     e.preventDefault()

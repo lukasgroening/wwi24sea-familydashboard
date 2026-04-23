@@ -160,9 +160,15 @@ type LoginPhase = 'idle' | 'running' | 'entering' | 'done'
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuthStore()
+  const isAuthenticated = useAuthStore(state => !!state.token)
   const timeOfDay = useMemo(() => getTimeOfDay(), [])
   const pal = PALETTES[timeOfDay]
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
 
   const [phase, setPhase] = useState<LoginPhase>('idle')
   const [showGame, setShowGame] = useState(false)
@@ -321,7 +327,7 @@ export default function LandingPage() {
 
         {/* Right: Actions */}
         <div style={{ pointerEvents: 'all', textAlign: 'right' }}>
-          {isAuthenticated() ? (
+          {isAuthenticated ? (
             <button
               onClick={handleDashboard}
               style={{

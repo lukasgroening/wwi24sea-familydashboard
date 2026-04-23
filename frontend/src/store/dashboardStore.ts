@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { DashboardWidgetInstance } from '../types'
+import type { DashboardWidgetInstance, Role } from '../types'
 import api from '../lib/api'
 
 interface LayoutItem {
@@ -23,6 +23,10 @@ interface DashboardState {
   hasWidget: (widgetId: string) => boolean
   loadFromBackend: () => Promise<void>
   saveToBackend: () => Promise<void>
+}
+
+function isAdminRole(role: Role | undefined): boolean {
+  return role === 'Familien-Administrator' || role === 'System-Administrator'
 }
 
 const DEFAULT_LAYOUTS: Record<string, { w: number; h: number }> = {
@@ -122,7 +126,11 @@ export const useDashboardStore = create<DashboardState>()(
             set({ widgets, layouts })
           } else {
             // Backend leer → Defaults ins Backend speichern damit künftige Loads konsistent sind
-            await get().saveToBackend()
+            // Aber nur wenn der User Admin ist!
+            const user = (await import('./authStore')).useAuthStore.getState().user
+            if (isAdminRole(user?.role)) {
+              await get().saveToBackend()
+            }
           }
         } catch {
           // Backend nicht erreichbar: lokales Layout behalten
@@ -130,6 +138,9 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       saveToBackend: async () => {
+        const user = (await import('./authStore')).useAuthStore.getState().user
+        if (!isAdminRole(user?.role)) return
+
         try {
           const { widgets, layouts } = get()
           const payload = stateToBackendPayload(widgets, layouts)

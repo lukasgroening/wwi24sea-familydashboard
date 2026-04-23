@@ -43,10 +43,11 @@ interface WidgetShellProps extends React.HTMLAttributes<HTMLDivElement> {
   variant: 'weather' | 'default'
   children: React.ReactNode
   title?: string
+  isAdmin?: boolean
 }
 
 const WidgetShell = forwardRef<HTMLDivElement, WidgetShellProps>(
-  ({ onRemove, variant, children, title, className = '', style, ...rest }, ref) => {
+  ({ onRemove, variant, children, title, isAdmin, className = '', style, ...rest }, ref) => {
     const isWeather = variant === 'weather'
     return (
       <div
@@ -63,24 +64,28 @@ const WidgetShell = forwardRef<HTMLDivElement, WidgetShellProps>(
         {...rest}
       >
         {/* drag handle */}
-        <div className="widget-drag-handle absolute top-2 left-2 right-10 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div style={{ width: 28, height: 3, borderRadius: 2, background: isWeather ? 'rgba(245,239,227,0.4)' : border }} />
-        </div>
+        {isAdmin && (
+          <div className="widget-drag-handle absolute top-2 left-2 right-10 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div style={{ width: 28, height: 3, borderRadius: 2, background: isWeather ? 'rgba(245,239,227,0.4)' : border }} />
+          </div>
+        )}
         {/* remove button */}
-        <button
-          onClick={onRemove}
-          className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-          style={{
-            width: 26, height: 26, borderRadius: 6,
-            background: isWeather ? 'rgba(245,239,227,0.15)' : 'rgba(42,36,29,0.06)',
-            border: 'none', cursor: 'pointer',
-            color: isWeather ? paper : ink2,
-            minHeight: 'unset', minWidth: 'unset',
-          }}
-          title="Widget entfernen"
-        >
-          <X size={12} />
-        </button>
+        {isAdmin && (
+          <button
+            onClick={onRemove}
+            className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+            style={{
+              width: 26, height: 26, borderRadius: 6,
+              background: isWeather ? 'rgba(245,239,227,0.15)' : 'rgba(42,36,29,0.06)',
+              border: 'none', cursor: 'pointer',
+              color: isWeather ? paper : ink2,
+              minHeight: 'unset', minWidth: 'unset',
+            }}
+            title="Widget entfernen"
+          >
+            <X size={12} />
+          </button>
+        )}
         {title && (
           <div style={{ fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: inkSoft, marginBottom: 14 }}>
             {title}
@@ -106,6 +111,7 @@ export default function DashboardPage() {
   } = useDashboardStore()
 
   const [showAddModal, setShowAddModal] = useState(false)
+  const isAdmin = user?.role === 'Familien-Administrator' || user?.role === 'System-Administrator'
 
   useEffect(() => {
     loadFromBackend()
@@ -142,18 +148,20 @@ export default function DashboardPage() {
           </h1>
           <p style={{ fontSize: 11, color: inkSoft, marginTop: 4, letterSpacing: '0.04em' }}>{todayStr}</p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px',
-            borderRadius: 6, background: ink, color: paper, border: 'none',
-            fontFamily: '"Geist Mono", monospace', fontSize: 11, letterSpacing: '0.16em',
-            textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap',
-            minHeight: 44,
-          }}
-        >
-          <Plus size={13} /> Widget
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px',
+              borderRadius: 6, background: ink, color: paper, border: 'none',
+              fontFamily: '"Geist Mono", monospace', fontSize: 11, letterSpacing: '0.16em',
+              textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap',
+              minHeight: 44,
+            }}
+          >
+            <Plus size={13} /> Widget
+          </button>
+        )}
       </div>
 
       {/* Grid */}
@@ -167,8 +175,8 @@ export default function DashboardPage() {
         onDragStop={saveToBackend}
         onResizeStop={saveToBackend}
         draggableHandle=".widget-drag-handle"
-        isResizable={true}
-        isDraggable={true}
+        isResizable={isAdmin}
+        isDraggable={isAdmin}
         compactType="vertical"
         margin={[12, 12]}
       >
@@ -183,6 +191,7 @@ export default function DashboardPage() {
               onRemove={() => removeWidget(instance.instanceId)}
               variant={isWeather ? 'weather' : 'default'}
               title={isWeather ? undefined : config.name}
+              isAdmin={isAdmin}
             >
               {isWeather ? (
                 <WeatherWidget
