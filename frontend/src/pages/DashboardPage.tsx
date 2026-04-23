@@ -134,8 +134,24 @@ export default function DashboardPage() {
   // Responsive columns: fewer on small screens
   const cols = containerWidth < 480 ? 2 : containerWidth < 768 ? 4 : 12
 
+  const WIDGET_MINS: Record<string, { minW: number; minH: number }> = {
+    weather:  { minW: 2, minH: 3 },
+    calendar: { minW: 3, minH: 3 },
+    todo:     { minW: 2, minH: 2 },
+    schedule: { minW: 3, minH: 2 },
+    minigame: { minW: 3, minH: 2 },
+  }
+
+  const clampLayout = (l: { i: string; x: number; y: number; w: number; h: number }) => {
+    const widgetId = dashboardWidgets.find(w => w.instanceId === l.i)?.widgetId
+    const min = widgetId ? (WIDGET_MINS[widgetId] ?? { minW: 2, minH: 2 }) : { minW: 2, minH: 2 }
+    return { ...l, minW: min.minW, minH: min.minH, w: Math.max(l.w, min.minW), h: Math.max(l.h, min.minH) }
+  }
+
+  const displayLayouts = layouts.map(clampLayout)
+
   const handleLayoutChange = (newLayout: Array<{ i: string; x: number; y: number; w: number; h: number }>) => {
-    updateLayouts(newLayout.map((l) => ({ i: l.i, x: l.x, y: l.y, w: l.w, h: l.h })))
+    updateLayouts(newLayout.map(clampLayout))
   }
 
   return (
@@ -167,7 +183,7 @@ export default function DashboardPage() {
       {/* Grid */}
       <ReactGridLayout
         className="layout"
-        layout={layouts}
+        layout={displayLayouts}
         cols={cols}
         rowHeight={90}
         width={containerWidth - 56}
