@@ -18,7 +18,7 @@ interface ScoreEntry {
 const INK = '#2a241d'
 const PAPER = '#f5efe3'
 
-export default function MiniGameWidget() {
+export default function MiniGameWidget({ settings, onSettingsChange }: WidgetProps) {
   const queryClient = useQueryClient()
   const [showGame, setShowGame] = useState(false)
   const [view, setView] = useState<'family' | 'global'>('family')

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../lib/api";
 import { useAuthStore } from "../../store/authStore";
-import type { User } from "../../types";
+import type { User, WidgetProps } from "../../types";
 
 const DAY_LABELS: Record<string, string> = {
   Montag: "Mo",
@@ -42,7 +42,7 @@ function formatTime(t: string) {
   return t.slice(0, 5);
 }
 
-export default function ScheduleWidget() {
+export default function ScheduleWidget({ settings, onSettingsChange }: WidgetProps) {
   const { user } = useAuthStore();
   const [activeDay, setActiveDay] = useState(todayKey);
 

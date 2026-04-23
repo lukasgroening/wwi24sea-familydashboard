@@ -18,7 +18,7 @@ function formatTemp(celsius: number, unit: string): string {
 export default function WeatherWidget({
   settings,
   onSettingsChange,
-}: WidgetProps & { onSettingsChange?: (s: Record<string, unknown>) => void }) {
+}: WidgetProps) {
   const weatherSettings: WeatherSettingsData = {
     locationName: (settings?.locationName as string) ?? 'Frankfurt am Main',
     locationCountry: (settings?.locationCountry as string) ?? 'DE',
