@@ -65,8 +65,8 @@ export default function Sidebar({ isOpen, onClose, onInviteClick }: SidebarProps
         </div>
         <button
           onClick={onClose}
-          className="md:hidden"
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: inkSoft, padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'unset', minWidth: 'unset' }}
+          className="md:hidden flex items-center justify-center"
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: inkSoft, padding: 4, minHeight: 'unset', minWidth: 'unset' }}
           aria-label="Menü schließen"
         >
           <X size={18} />

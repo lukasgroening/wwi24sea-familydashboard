@@ -138,6 +138,12 @@ export default function DashboardPage() {
     updateLayouts(newLayout.map((l) => ({ i: l.i, x: l.x, y: l.y, w: l.w, h: l.h })))
   }
 
+  // Layout für die Anzeige vorbereiten (static setzen wenn kein Admin)
+  const displayLayout = layouts.map(l => ({
+    ...l,
+    static: !isAdmin
+  }))
+
   return (
     <div style={{ flex: 1, padding: '28px 28px 40px', overflowY: 'auto', minWidth: 0 }} ref={containerRef}>
       {/* Topbar */}
@@ -167,7 +173,7 @@ export default function DashboardPage() {
       {/* Grid */}
       <ReactGridLayout
         className="layout"
-        layout={layouts}
+        layout={displayLayout}
         cols={cols}
         rowHeight={90}
         width={containerWidth - 56}

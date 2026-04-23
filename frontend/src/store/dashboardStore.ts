@@ -114,26 +114,28 @@ function backendToState(data: Array<{ id: number; type: string; x: number; y: nu
 export const useDashboardStore = create<DashboardState>()(
   persist(
     (set, get) => ({
-      widgets: defaultWidgets,
-      layouts: defaultLayouts,
+      widgets: [], // Startet leer
+      layouts: [], // Startet leer
 
       loadFromBackend: async () => {
         try {
           const { data } = await api.get('/api/dashboard/widgets')
           if (data && data.length > 0) {
             const { widgets, layouts } = backendToState(data)
-            // Explizit ersetzen — kein Merge mit altem localStorage-State
             set({ widgets, layouts })
           } else {
-            // Backend leer → Defaults ins Backend speichern damit künftige Loads konsistent sind
-            // Aber nur wenn der User Admin ist!
+            // Backend leer -> Jetzt erst Defaults setzen und speichern
             const user = (await import('./authStore')).useAuthStore.getState().user
             if (isAdminRole(user?.role)) {
+              set({ widgets: defaultWidgets, layouts: defaultLayouts })
               await get().saveToBackend()
             }
           }
         } catch {
-          // Backend nicht erreichbar: lokales Layout behalten
+          // Bei Fehler (z.B. Offline) Fallback auf Defaults, falls gar nichts da ist
+          if (get().widgets.length === 0) {
+            set({ widgets: defaultWidgets, layouts: defaultLayouts })
+          }
         }
       },
 
