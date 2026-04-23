@@ -60,3 +60,25 @@ def get_family_leaderboard(session: Session, family_id: int, limit: int = 10) ->
             break
 
     return leaderboard
+
+
+def get_global_leaderboard(session: Session, limit: int = 10) -> List[GameScore]:
+    """
+    Gibt die Top-Scores über alle Familien hinweg zurück.
+    Nur der beste Score pro Benutzer wird berücksichtigt.
+    """
+    scores = session.exec(
+        select(GameScore)
+        .order_by(GameScore.score.desc())
+    ).all()
+
+    seen: set[int] = set()
+    leaderboard: list[GameScore] = []
+    for s in scores:
+        if s.user_id not in seen:
+            seen.add(s.user_id)
+            leaderboard.append(s)
+        if len(leaderboard) >= limit:
+            break
+
+    return leaderboard

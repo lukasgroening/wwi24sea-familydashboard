@@ -41,3 +41,10 @@ def get_family_leaderboard(
         return []
 
     return game_score_service.get_family_leaderboard(session, current_user.family_id)
+
+
+@router.get("/score/global", response_model=List[GameScorePublic])
+def get_global_leaderboard(
+    session: Session = Depends(get_session),
+):
+    return game_score_service.get_global_leaderboard(session)
