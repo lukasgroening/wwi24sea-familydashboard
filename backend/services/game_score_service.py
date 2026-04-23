@@ -1,6 +1,7 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col
 from typing import List, Optional
-from models.game_score import GameScore, GameScoreCreate
+from models.game_score import GameScore, GameScoreCreate, GameScorePublic
+from models.family import Family
 from models.user import User
 
 
@@ -12,7 +13,7 @@ def submit_score(session: Session, score_in: GameScoreCreate, current_user: User
     existing = session.exec(
         select(GameScore)
         .where(GameScore.user_id == current_user.id)
-        .order_by(GameScore.score.desc())
+        .order_by(col(GameScore.score).desc())
     ).first()
 
     if existing and existing.score >= score_in.score:
@@ -35,49 +36,63 @@ def get_user_highscore(session: Session, user_id: int) -> Optional[GameScore]:
     return session.exec(
         select(GameScore)
         .where(GameScore.user_id == user_id)
-        .order_by(GameScore.score.desc())
+        .order_by(col(GameScore.score).desc())
     ).first()
 
 
-def get_family_leaderboard(session: Session, family_id: int, limit: int = 10) -> List[GameScore]:
+def get_family_leaderboard(session: Session, family_id: int, limit: int = 10) -> List[GameScorePublic]:
     """
     Gibt die Top-Scores einer Familie zurück. 
     Nur der beste Score pro Benutzer wird berücksichtigt.
     """
-    scores = session.exec(
-        select(GameScore)
+    statement = (
+        select(GameScore, Family.name.label("family_name"))
+        .join(Family, GameScore.family_id == Family.id, isouter=True)
         .where(GameScore.family_id == family_id)
-        .order_by(GameScore.score.desc())
-    ).all()
+        .order_by(col(GameScore.score).desc())
+    )
+    results = session.exec(statement).all()
 
     seen: set[int] = set()
-    leaderboard: list[GameScore] = []
-    for s in scores:
-        if s.user_id not in seen:
-            seen.add(s.user_id)
-            leaderboard.append(s)
+    leaderboard: list[GameScorePublic] = []
+    for score, family_name in results:
+        if score.user_id not in seen:
+            seen.add(score.user_id)
+            leaderboard.append(
+                GameScorePublic(
+                    **score.model_dump(),
+                    family_name=family_name
+                )
+            )
         if len(leaderboard) >= limit:
             break
 
     return leaderboard
 
 
-def get_global_leaderboard(session: Session, limit: int = 10) -> List[GameScore]:
+def get_global_leaderboard(session: Session, limit: int = 10) -> List[GameScorePublic]:
     """
     Gibt die Top-Scores über alle Familien hinweg zurück.
     Nur der beste Score pro Benutzer wird berücksichtigt.
     """
-    scores = session.exec(
-        select(GameScore)
-        .order_by(GameScore.score.desc())
-    ).all()
+    statement = (
+        select(GameScore, Family.name.label("family_name"))
+        .join(Family, GameScore.family_id == Family.id, isouter=True)
+        .order_by(col(GameScore.score).desc())
+    )
+    results = session.exec(statement).all()
 
     seen: set[int] = set()
-    leaderboard: list[GameScore] = []
-    for s in scores:
-        if s.user_id not in seen:
-            seen.add(s.user_id)
-            leaderboard.append(s)
+    leaderboard: list[GameScorePublic] = []
+    for score, family_name in results:
+        if score.user_id not in seen:
+            seen.add(score.user_id)
+            leaderboard.append(
+                GameScorePublic(
+                    **score.model_dump(),
+                    family_name=family_name
+                )
+            )
         if len(leaderboard) >= limit:
             break
 

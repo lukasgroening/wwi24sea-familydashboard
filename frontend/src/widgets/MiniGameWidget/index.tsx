@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trophy, Play } from 'lucide-react'
 import api from '../../lib/api'
+import { useAuthStore } from '../../store/authStore'
 import RunnerGame from '../../components/RunnerGame'
 
 interface ScoreEntry {
@@ -11,6 +12,7 @@ interface ScoreEntry {
   username: string
   score: number
   created_at: string
+  family_name?: string
 }
 
 const INK = '#2a241d'
@@ -21,13 +23,15 @@ export default function MiniGameWidget() {
   const [showGame, setShowGame] = useState(false)
   const [view, setView] = useState<'family' | 'global'>('family')
 
+  const user = useAuthStore(state => state.user)
+
   const { data: myHighscore } = useQuery<ScoreEntry | null>({
-    queryKey: ['game-score-me'],
+    queryKey: ['game-score-me', user?.id],
     queryFn: () => api.get<ScoreEntry | null>('/api/game/score/me').then(r => r.data),
   })
 
   const { data: familyLeaderboard = [] } = useQuery<ScoreEntry[]>({
-    queryKey: ['game-score-family'],
+    queryKey: ['game-score-family', user?.join_code], // join_code als Proxy für die Familie
     queryFn: () => api.get<ScoreEntry[]>('/api/game/score/family').then(r => r.data),
   })
 
@@ -136,7 +140,14 @@ export default function MiniGameWidget() {
                       {i === 0 ? '🏆' : `#${i + 1}`}
                     </td>
                     <td style={{ padding: '8px', fontWeight: i === 0 ? 600 : 400 }}>
-                      {entry.username}
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span>{entry.username}</span>
+                        {view === 'global' && entry.family_name && (
+                          <span style={{ fontSize: 9, opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {entry.family_name}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>
                       {Math.floor(entry.score / 10)}
