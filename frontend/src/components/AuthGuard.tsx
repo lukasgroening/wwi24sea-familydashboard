@@ -8,9 +8,10 @@ interface Props {
 }
 
 export default function AuthGuard({ children, requiredRole }: Props) {
-  const { user, isAuthenticated } = useAuthStore()
+  const user = useAuthStore(state => state.user)
+  const isAuthenticated = useAuthStore(state => !!state.token)
 
-  if (!isAuthenticated()) return <Navigate to="/login" replace />
+  if (!isAuthenticated) return <Navigate to="/login" replace />
 
   if (requiredRole && user?.role !== requiredRole && user?.role !== 'System-Administrator') {
     return <Navigate to="/" replace />

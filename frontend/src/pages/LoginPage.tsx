@@ -59,12 +59,17 @@ function FamilySceneRight() {
 }
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { login } = useAuthStore()
   const navigate = useNavigate()
+  const { login, isAuthenticated } = useAuthStore()
+  
+  // Sofort zum Dashboard, wenn bereits eingeloggt
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
+
+  const [username, setUsername] = useState('')
   const location = useLocation()
   const successMessage = (location.state as { message?: string } | null)?.message
 
@@ -78,7 +83,7 @@ export default function LoginPage() {
       params.append('password', password)
       const { data } = await api.post<{ access_token: string }>('/api/login', params)
       const token = data.access_token
-      let payload: { sub?: string; role?: string; id?: number }
+      let payload: { sub?: string; role?: string; id?: number; family_name?: string; join_code?: string }
       try {
         payload = JSON.parse(atob(token.split('.')[1]))
       } catch {
@@ -86,7 +91,13 @@ export default function LoginPage() {
         return
       }
       if (!payload.sub || !payload.role) { setError('Ungültiger Token vom Server.'); return }
-      const user: User = { id: payload.id ?? 0, username: payload.sub, role: payload.role as User['role'] }
+      const user: User = { 
+        id: payload.id ?? 0, 
+        username: payload.sub, 
+        role: payload.role as User['role'],
+        family_name: payload.family_name,
+        join_code: payload.join_code
+      }
       login(user, token)
       navigate('/dashboard')
     } catch {
