@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../lib/api";
 import { useAuthStore } from "../../store/authStore";
@@ -74,6 +74,10 @@ export default function ScheduleWidget() {
   }, [user, entries]);
 
   const [filterUserId, setFilterUserId] = useState(defaultFilterUserId);
+
+  useEffect(() => {
+    setFilterUserId(defaultFilterUserId);
+  }, [defaultFilterUserId]);
 
   const error = loadError ? "Stundenplan konnte nicht geladen werden." : null;
 
