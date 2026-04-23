@@ -3,6 +3,7 @@ import WeatherWidget from './WeatherWidget'
 import TodoWidget from './TodoWidget'
 import CalendarWidget from './CalendarWidget'
 import ScheduleWidget from './ScheduleWidget'
+import MiniGameWidget from './MiniGameWidget'
 
 /**
  * WIDGET REGISTRY
@@ -43,6 +44,14 @@ export const WIDGETS: WidgetConfig[] = [
     description: 'Schulplan für Kinder und Au Pairs',
     component: ScheduleWidget,
     defaultSize: 'medium',
+    requiredRole: 'Nutzer',
+  },
+  {
+    id: 'minigame',
+    name: 'Famly Runner',
+    description: 'Endless-Runner-Spiel mit Familien-Highscore',
+    component: MiniGameWidget,
+    defaultSize: 'large',
     requiredRole: 'Nutzer',
   },
 ]
