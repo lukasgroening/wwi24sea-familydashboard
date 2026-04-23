@@ -60,11 +60,12 @@ function FamilySceneRight() {
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { login, isAuthenticated } = useAuthStore()
+  const login = useAuthStore(state => state.login)
+  const isAuthenticated = useAuthStore(state => !!state.token)
   
   // Sofort zum Dashboard, wenn bereits eingeloggt
   useEffect(() => {
-    if (isAuthenticated()) {
+    if (isAuthenticated) {
       navigate('/dashboard', { replace: true })
     }
   }, [isAuthenticated, navigate])
