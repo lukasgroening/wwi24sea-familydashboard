@@ -4,46 +4,39 @@ import TodoWidget from './TodoWidget'
 import CalendarWidget from './CalendarWidget'
 import ScheduleWidget from './ScheduleWidget'
 import MiniGameWidget from './MiniGameWidget'
+import NoteWidget from './NoteWidget'
 
-/**
- * WIDGET REGISTRY
- * ---------------
- * Um ein neues Widget hinzuzufügen:
- * 1. Neuen Ordner unter src/widgets/MeinWidget/ erstellen
- * 2. index.tsx mit einer React-Komponente erstellen (siehe WidgetProps in types/index.ts)
- * 3. Widget hier unten in die Liste eintragen.
- */
 export const WIDGETS: WidgetConfig[] = [
   {
     id: 'weather',
     name: 'Wetter',
-    description: 'Aktuelle Wetterinfos für einen Standort',
+    description: 'Aktuelle Vorhersage für deinen Standort',
     component: WeatherWidget,
-    defaultSize: 'small',
-    requiredRole: 'Nutzer',
-  },
-  {
-    id: 'todo',
-    name: 'To-Do Liste',
-    description: 'Gemeinsame Aufgabenliste der Familie',
-    component: TodoWidget,
     defaultSize: 'medium',
     requiredRole: 'Nutzer',
   },
   {
     id: 'calendar',
-    name: 'Familienkalender',
-    description: 'Termine und Events der Familie',
+    name: 'Kalender',
+    description: 'Nächste Termine und Familien-Events',
     component: CalendarWidget,
-    defaultSize: 'large',
+    defaultSize: 'medium',
+    requiredRole: 'Nutzer',
+  },
+  {
+    id: 'todo',
+    name: 'To-Do Liste',
+    description: 'Aufgaben gemeinsam planen und erledigen',
+    component: TodoWidget,
+    defaultSize: 'medium',
     requiredRole: 'Nutzer',
   },
   {
     id: 'schedule',
     name: 'Stundenplan',
-    description: 'Schulplan für Kinder und Au Pairs',
+    description: 'Wochenübersicht über alle Termine',
     component: ScheduleWidget,
-    defaultSize: 'medium',
+    defaultSize: 'large',
     requiredRole: 'Nutzer',
   },
   {
@@ -52,6 +45,14 @@ export const WIDGETS: WidgetConfig[] = [
     description: 'Endless-Runner-Spiel mit Familien-Highscore',
     component: MiniGameWidget,
     defaultSize: 'large',
+    requiredRole: 'Nutzer',
+  },
+  {
+    id: 'notes',
+    name: 'Notizen',
+    description: 'Wichtige Gedanken und Familien-Memos',
+    component: NoteWidget,
+    defaultSize: 'medium',
     requiredRole: 'Nutzer',
   },
 ]
