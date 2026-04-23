@@ -31,6 +31,7 @@ function getFirstDayOfMonth(year: number, month: number) {
 export default function CalendarWidget() {
   const today = new Date()
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() })
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const navigate = useNavigate()
 
   const { data: events = [], isLoading, error } = useQuery<CalendarEvent[]>({
@@ -48,25 +49,39 @@ export default function CalendarWidget() {
   for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, current: true })
   while (cells.length % 7 !== 0) cells.push({ day: cells.length - daysInMonth - firstDay + 1, current: false })
 
-  const eventDates = new Set(
-    events
-      .filter((e) => {
-        const d = new Date(e.start_time)
-        return d.getFullYear() === view.year && d.getMonth() === view.month
-      })
-      .map((e) => new Date(e.start_time).getDate())
-  )
+  const eventsByDay: Record<number, CalendarEvent[]> = {}
+  events.forEach((ev) => {
+    const d = new Date(ev.start_time)
+    if (d.getFullYear() === view.year && d.getMonth() === view.month) {
+      const day = d.getDate()
+      if (!eventsByDay[day]) eventsByDay[day] = []
+      eventsByDay[day].push(ev)
+    }
+  })
 
-  const upcomingEvents = [...events]
-    .filter((e) => new Date(e.start_time) >= new Date(today.toDateString()))
-    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-    .slice(0, 3)
+  const displayEvents = selectedDay !== null
+    ? (eventsByDay[selectedDay] ?? []).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    : [...events]
+        .filter((e) => new Date(e.start_time) >= new Date(today.toDateString()))
+        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+        .slice(0, 3)
 
-  const prev = () => setView((v) => v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 })
-  const next = () => setView((v) => v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 })
+  const prev = () => {
+    setSelectedDay(null)
+    setView((v) => v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 })
+  }
+  const next = () => {
+    setSelectedDay(null)
+    setView((v) => v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 })
+  }
 
   const isToday = (day: number, current: boolean) =>
     current && day === today.getDate() && view.month === today.getMonth() && view.year === today.getFullYear()
+
+  const handleDayClick = (day: number, current: boolean) => {
+    if (!current) return
+    setSelectedDay(selectedDay === day ? null : day)
+  }
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -94,21 +109,32 @@ export default function CalendarWidget() {
         ))}
         {cells.map((cell, i) => {
           const today_ = isToday(cell.day, cell.current)
-          const hasEvent = cell.current && eventDates.has(cell.day)
+          const isSelected = cell.current && selectedDay === cell.day
+          const dayEvents = cell.current ? (eventsByDay[cell.day] ?? []) : []
           const cellKey = cell.current ? `cur-${cell.day}` : `filler-${i}`
           return (
             <div
               key={cellKey}
+              onClick={() => handleDayClick(cell.day, cell.current)}
               className="text-center py-1.5 rounded-lg text-xs cursor-pointer transition-colors"
               style={{
-                background: today_ ? 'var(--color-sage-500)' : 'transparent',
+                background: today_ ? 'var(--color-sage-500)' : isSelected ? 'var(--color-sage-50)' : 'transparent',
                 color: today_ ? 'white' : cell.current ? 'var(--color-stone-800)' : 'var(--color-stone-dim)',
-                fontWeight: today_ ? 500 : 400,
+                fontWeight: today_ || isSelected ? 500 : 400,
+                border: isSelected && !today_ ? '1px solid var(--color-sage-500)' : '1px solid transparent',
               }}
             >
               {cell.day}
-              {hasEvent && (
-                <div className="w-1 h-1 rounded-full mx-auto mt-0.5" style={{ background: today_ ? 'oklch(1 0 0 / 0.7)' : 'var(--color-sage-500)' }} />
+              {dayEvents.length > 0 && (
+                <div className="flex gap-0.5 mt-0.5 justify-center">
+                  {dayEvents.slice(0, 3).map((ev, j) => (
+                    <div
+                      key={j}
+                      className="w-1 h-1 rounded-full"
+                      style={{ background: today_ ? 'oklch(1 0 0 / 0.7)' : (ev.color ?? 'var(--color-sage-500)') }}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           )
@@ -118,30 +144,31 @@ export default function CalendarWidget() {
       <div className="border-t pt-3 flex flex-col gap-2" style={{ borderColor: 'var(--color-stone-row)' }}>
         <div className="flex items-center justify-between">
           <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--color-stone-500)' }}>
-            Nächste Termine
+            {selectedDay !== null ? `${selectedDay}. ${MONTHS[view.month]}` : 'Nächste Termine'}
           </div>
           <button
             onClick={() => navigate('/calendar')}
             className="text-xs px-2 py-1 rounded-lg transition-colors"
             style={{ background: 'var(--color-stone-100)', color: 'var(--color-stone-700)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
           >
-            Alle anzeigen <ArrowRight size={12} className="inline-block" />
+            Vollansicht <ArrowRight size={12} className="inline-block" />
           </button>
         </div>
         {isLoading && <p className="text-xs" style={{ color: 'var(--color-stone-500)' }}>Lade Termine…</p>}
         {error && <p className="text-xs" style={{ color: 'var(--color-danger-700)' }}>Termine konnten nicht geladen werden.</p>}
-        {!isLoading && !error && upcomingEvents.length === 0 && (
-          <p className="text-xs" style={{ color: 'var(--color-stone-500)' }}>Keine bevorstehenden Termine.</p>
+        {!isLoading && !error && displayEvents.length === 0 && (
+          <p className="text-xs" style={{ color: 'var(--color-stone-500)' }}>
+            {selectedDay !== null ? 'Keine Termine an diesem Tag.' : 'Keine bevorstehenden Termine.'}
+          </p>
         )}
-        {upcomingEvents.map((ev, i) => (
+        {displayEvents.map((ev, i) => (
           <div key={ev.id ?? i} className="flex items-center gap-2.5">
             <div className="w-0.5 h-8 rounded-full shrink-0" style={{ background: ev.color ?? 'var(--color-sage-500)' }} />
-            <div>
-              <div className="text-sm font-medium">{ev.title}</div>
-              <div className="text-xs" style={{ color: 'var(--color-stone-600)' }}>
-                {new Date(ev.start_time).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}
-                {' · '}
+            <div className="min-w-0">
+              <div className="text-sm font-medium truncate">{ev.title}</div>
+              <div className="text-[10px]" style={{ color: 'var(--color-stone-600)' }}>
                 {new Date(ev.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                {ev.location && ` · 📍 ${ev.location}`}
               </div>
             </div>
           </div>
