@@ -3,7 +3,6 @@ import { Check, Plus, SlidersHorizontal, X } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api";
 import { colors } from "../../lib/colors";
-import type { WidgetProps } from "../../types";
 
 interface Todo {
   id: number;
@@ -29,7 +28,7 @@ const TAG_OPTIONS = ["Eltern", "Au-Pair", "Kinder"];
 const FILTER_ALL = "Alle";
 const FILTER_NO_TAG = "Kein Tag";
 
-export default function TodoWidget({ settings, onSettingsChange }: WidgetProps) {
+export default function TodoWidget() {
   const queryClient = useQueryClient();
   const [input, setInput] = useState("");
   const [selectedTag, setSelectedTag] = useState("");

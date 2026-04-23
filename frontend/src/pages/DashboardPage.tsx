@@ -7,7 +7,6 @@ import { WIDGETS } from '../widgets'
 import { useAuthStore } from '../store/authStore'
 import { useDashboardStore } from '../store/dashboardStore'
 import type { Role } from '../types'
-import WeatherWidget from '../widgets/WeatherWidget'
 
 const ink = '#2a241d'
 const ink2 = '#554a3c'
