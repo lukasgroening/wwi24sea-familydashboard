@@ -18,6 +18,7 @@ interface Props {
   onClose: () => void
   inkColor: string
   paperColor: string
+  onGameOver?: (score: number) => void
 }
 
 interface Obstacle {
@@ -36,7 +37,7 @@ const CHAR_X = 80
 const CHAR_W = 28
 const CHAR_H = 36
 
-export default function RunnerGame({ onClose, inkColor, paperColor }: Props) {
+export default function RunnerGame({ onClose, inkColor, paperColor, onGameOver }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const stateRef = useRef({
     y: GROUND - CHAR_H,
@@ -264,6 +265,7 @@ export default function RunnerGame({ onClose, inkColor, paperColor }: Props) {
               localStorage.setItem('famly_runner_hs', String(s.score))
             }
             setDead(true)
+            onGameOver?.(s.score)
           }
         }
 

@@ -14,6 +14,7 @@ from routers import (
     dashboard,
     calendars,
     families,
+    game_scores,
 )
 from models.user import Role, User
 from models.family import Family
@@ -21,7 +22,7 @@ from models.todo import ToDo
 from models.schedule import ScheduleEntry, DayOfWeek
 from database import engine
 
-from models import note, schedule, calendar  # noqa: F401
+from models import note, schedule, calendar, game_score  # noqa: F401
 from models.note import Note
 from models.calendar import CalendarEvent, CalendarSource
 
@@ -215,6 +216,7 @@ app.include_router(schedules.router)
 app.include_router(calendars.router)
 app.include_router(dashboard.router)
 app.include_router(families.router)
+app.include_router(game_scores.router)
 
 
 @app.get("/api/health")

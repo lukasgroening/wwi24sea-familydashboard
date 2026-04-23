@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import RunnerGame from '../components/RunnerGame'
 
 const W = 1600
 const H = 600
@@ -165,7 +164,6 @@ export default function LandingPage() {
   const pal = PALETTES[timeOfDay]
 
   const [phase, setPhase] = useState<LoginPhase>('idle')
-  const [showGame, setShowGame] = useState(false)
   const [hoverLogin, setHoverLogin] = useState(false)
 
   const charsRef = useRef<Char[]>([])
@@ -282,7 +280,7 @@ export default function LandingPage() {
             ink={pal.ink}
             paper={pal.paper}
             accent={i % 2 === 1}
-            onClick={phase === 'idle' ? () => setShowGame(true) : undefined}
+            onClick={undefined}
           />
         ))}
       </svg>
@@ -375,14 +373,6 @@ export default function LandingPage() {
         <span>{new Date().toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' })}</span>
       </div>
 
-      {/* Runner Game Overlay */}
-      {showGame && (
-        <RunnerGame
-          onClose={() => setShowGame(false)}
-          inkColor={pal.ink}
-          paperColor={pal.paper}
-        />
-      )}
     </div>
   )
 }
