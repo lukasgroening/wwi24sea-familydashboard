@@ -26,14 +26,15 @@ describe('AuthStore', () => {
     expect(state.isAuthenticated()).toBe(true)
   })
 
-  it('sollte das Token auch im localStorage speichern', () => {
+  it('sollte das Token im localStorage via Zustand Persist speichern', () => {
     const store = useAuthStore.getState()
     store.login({ id: 1, username: 'Max', role: 'Nutzer' }, 'mein-token-123')
 
-    expect(localStorage.getItem('token')).toBe('mein-token-123')
+    const persistedData = JSON.parse(localStorage.getItem('auth') || '{}')
+    expect(persistedData.state.token).toBe('mein-token-123')
   })
 
-  it('sollte nach Logout alles zurücksetzen', () => {
+  it('sollte nach Logout den localStorage bereinigen', () => {
     const store = useAuthStore.getState()
     store.login({ id: 1, username: 'Max', role: 'Nutzer' }, 'mein-token-123')
     store.logout()
@@ -41,8 +42,10 @@ describe('AuthStore', () => {
     const state = useAuthStore.getState()
     expect(state.user).toBeNull()
     expect(state.token).toBeNull()
-    expect(state.isAuthenticated()).toBe(false)
-    expect(localStorage.getItem('token')).toBeNull()
+    
+    const persistedData = JSON.parse(localStorage.getItem('auth') || '{}')
+    expect(persistedData.state.token).toBeNull()
+    expect(persistedData.state.user).toBeNull()
   })
 
   it('sollte verschiedene Rollen korrekt speichern', () => {

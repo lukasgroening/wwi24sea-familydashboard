@@ -148,7 +148,7 @@ export default function DashboardPage() {
     return { ...l, minW: min.minW, minH: min.minH, w: Math.max(l.w, min.minW), h: Math.max(l.h, min.minH) }
   }
 
-  const displayLayouts = layouts.map(clampLayout)
+  const displayLayouts = layouts.map(l => ({ ...clampLayout(l), static: !isAdmin }))
 
   const handleLayoutChange = (newLayout: Array<{ i: string; x: number; y: number; w: number; h: number }>) => {
     updateLayouts(newLayout.map(clampLayout))

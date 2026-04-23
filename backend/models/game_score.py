@@ -23,3 +23,4 @@ class GameScorePublic(SQLModel):
     username: str
     score: int
     created_at: datetime
+    family_name: Optional[str] = None

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trophy, Play } from 'lucide-react'
 import api from '../../lib/api'
+import { useAuthStore } from '../../store/authStore'
 import RunnerGame from '../../components/RunnerGame'
 
 interface ScoreEntry {
@@ -11,6 +12,7 @@ interface ScoreEntry {
   username: string
   score: number
   created_at: string
+  family_name?: string
 }
 
 const INK = '#2a241d'
@@ -19,16 +21,26 @@ const PAPER = '#f5efe3'
 export default function MiniGameWidget() {
   const queryClient = useQueryClient()
   const [showGame, setShowGame] = useState(false)
+  const [view, setView] = useState<'family' | 'global'>('family')
+
+  const user = useAuthStore(state => state.user)
 
   const { data: myHighscore } = useQuery<ScoreEntry | null>({
-    queryKey: ['game-score-me'],
+    queryKey: ['game-score-me', user?.id],
     queryFn: () => api.get<ScoreEntry | null>('/api/game/score/me').then(r => r.data),
   })
 
-  const { data: leaderboard = [] } = useQuery<ScoreEntry[]>({
-    queryKey: ['game-score-family'],
+  const { data: familyLeaderboard = [] } = useQuery<ScoreEntry[]>({
+    queryKey: ['game-score-family', user?.join_code], // join_code als Proxy für die Familie
     queryFn: () => api.get<ScoreEntry[]>('/api/game/score/family').then(r => r.data),
   })
+
+  const { data: globalLeaderboard = [] } = useQuery<ScoreEntry[]>({
+    queryKey: ['game-score-global'],
+    queryFn: () => api.get<ScoreEntry[]>('/api/game/score/global').then(r => r.data),
+  })
+
+  const leaderboard = view === 'family' ? familyLeaderboard : globalLeaderboard
 
   const submitScore = useMutation({
     mutationFn: (score: number) =>
@@ -36,6 +48,7 @@ export default function MiniGameWidget() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['game-score-me'] })
       queryClient.invalidateQueries({ queryKey: ['game-score-family'] })
+      queryClient.invalidateQueries({ queryKey: ['game-score-global'] })
     },
   })
 
@@ -74,14 +87,39 @@ export default function MiniGameWidget() {
           </button>
         </div>
 
-        {/* Trennlinie */}
-        <div style={{ borderTop: `1px solid ${INK}15` }} />
+        {/* Tab Switcher */}
+        <div style={{ display: 'flex', gap: 16, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <button
+            onClick={() => setView('family')}
+            style={{
+              background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer',
+              color: INK, opacity: view === 'family' ? 1 : 0.4,
+              borderBottom: view === 'family' ? `2px solid ${INK}` : '2px solid transparent',
+              fontWeight: view === 'family' ? 600 : 400,
+              fontFamily: 'inherit',
+            }}
+          >
+            Familie
+          </button>
+          <button
+            onClick={() => setView('global')}
+            style={{
+              background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer',
+              color: INK, opacity: view === 'global' ? 1 : 0.4,
+              borderBottom: view === 'global' ? `2px solid ${INK}` : '2px solid transparent',
+              fontWeight: view === 'global' ? 600 : 400,
+              fontFamily: 'inherit',
+            }}
+          >
+            Weltweit
+          </button>
+        </div>
 
-        {/* Familien-Leaderboard */}
+        {/* Leaderboard */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {leaderboard.length === 0 ? (
             <div style={{ textAlign: 'center', opacity: 0.4, fontSize: 12, paddingTop: 24 }}>
-              Noch keine Scores — spielt los!
+              {view === 'family' ? 'Noch keine Scores in der Familie.' : 'Weltweit noch keine Scores.'}
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
@@ -102,7 +140,14 @@ export default function MiniGameWidget() {
                       {i === 0 ? '🏆' : `#${i + 1}`}
                     </td>
                     <td style={{ padding: '8px', fontWeight: i === 0 ? 600 : 400 }}>
-                      {entry.username}
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span>{entry.username}</span>
+                        {view === 'global' && entry.family_name && (
+                          <span style={{ fontSize: 9, opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {entry.family_name}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>
                       {Math.floor(entry.score / 10)}
