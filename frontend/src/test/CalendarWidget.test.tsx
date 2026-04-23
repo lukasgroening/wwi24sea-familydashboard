@@ -119,26 +119,26 @@ describe('CalendarWidget', () => {
     })
   })
 
-  it('zeigt den "Alle anzeigen" Button', async () => {
+  it('zeigt den "Vollansicht" Button', async () => {
     mockApi.get.mockResolvedValue({ data: [] })
 
     renderCalendar()
 
     await waitFor(() => {
-      expect(screen.getByText(/Alle anzeigen/)).toBeInTheDocument()
+      expect(screen.getByText(/Vollansicht/)).toBeInTheDocument()
     })
   })
 
-  it('navigiert zu /calendar wenn "Alle anzeigen" geklickt wird', async () => {
+  it('navigiert zu /calendar wenn "Vollansicht" geklickt wird', async () => {
     mockApi.get.mockResolvedValue({ data: [] })
 
     renderCalendar()
 
     await waitFor(() => {
-      expect(screen.getByText(/Alle anzeigen/)).toBeInTheDocument()
+      expect(screen.getByText(/Vollansicht/)).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByText(/Alle anzeigen/))
+    fireEvent.click(screen.getByText(/Vollansicht/))
 
     expect(mockNavigate).toHaveBeenCalledWith('/calendar')
   })

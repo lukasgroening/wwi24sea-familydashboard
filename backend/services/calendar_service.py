@@ -102,7 +102,13 @@ def get_all_merged_events(
         select(CalendarEvent).where(CalendarEvent.family_id == family_id)
     ).all()
     for e in db_events:
-        all_events.append(CalendarEventPublic(**e.model_dump(), is_external=False))
+        public_event = CalendarEventPublic(**e.model_dump(), is_external=False)
+        # Sicherstellen, dass lokale Events auch TZ-aware sind (UTC)
+        if public_event.start_time.tzinfo is None:
+            public_event.start_time = public_event.start_time.replace(tzinfo=timezone.utc)
+        if public_event.end_time.tzinfo is None:
+            public_event.end_time = public_event.end_time.replace(tzinfo=timezone.utc)
+        all_events.append(public_event)
 
     # 2. Externe Events von aktiven Quellen abrufen
     active_sources = session.exec(
