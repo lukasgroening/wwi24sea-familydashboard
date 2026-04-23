@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import api from '../lib/api'
@@ -70,6 +70,9 @@ export default function LoginPage() {
   }, [isAuthenticated, navigate])
 
   const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const location = useLocation()
   const successMessage = (location.state as { message?: string } | null)?.message
 

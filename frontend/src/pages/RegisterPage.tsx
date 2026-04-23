@@ -26,7 +26,6 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [successData, setSuccessData] = useState<{ username: string; join_code?: string; family_name?: string } | null>(null)
-  const navigate = useNavigate()
 
   const handleSubmit: React.ComponentProps<'form'>['onSubmit'] = async (e) => {
     e.preventDefault()
