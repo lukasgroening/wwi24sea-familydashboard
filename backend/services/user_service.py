@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from models.user import User, UserCreate, UserPublic, UserUpdate, UserRegister, Role
 from models.family import Family, FamilyCreate
 from auth import get_password_hash
-from services import family_service
+from services import family_service, dashboard_service
 
 
 def get_available_roles() -> List[str]:
@@ -193,6 +193,7 @@ def register_user(session: Session, user_in: UserRegister) -> User:
 
     role = Role.USER
     family_id = None
+    is_new_family = False
 
     if user_in.family_name:
         # Neue Familie vorbereiten (ohne commit)
@@ -202,6 +203,7 @@ def register_user(session: Session, user_in: UserRegister) -> User:
         session.flush()  # Weist die ID zu, ohne zu committen
         family_id = new_family.id
         role = Role.FAMILY_ADMIN
+        is_new_family = True
     else:
         # Bestehender Familie beitreten
         family = session.exec(
@@ -223,7 +225,12 @@ def register_user(session: Session, user_in: UserRegister) -> User:
     )
 
     session.add(new_user)
-    session.commit()  # Committet Familie UND User gleichzeitig
+    
+    if is_new_family:
+        session.flush() # ID für den User generieren
+        dashboard_service.initialize_default_widgets(session, new_user.id, family_id)
+
+    session.commit()  # Committet Familie, User und ggf. Widgets gleichzeitig
     session.refresh(new_user)
     
     # join_code für die Antwort laden
