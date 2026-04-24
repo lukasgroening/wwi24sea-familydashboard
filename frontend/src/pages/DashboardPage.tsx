@@ -149,9 +149,11 @@ export default function DashboardPage() {
   const clampLayout = (l: { i: string; x: number; y: number; w: number; h: number }) => {
     const widgetId = dashboardWidgets.find(w => w.instanceId === l.i)?.widgetId
     const min = widgetId ? (WIDGET_MINS[widgetId] ?? { minW: 2, minH: 2 }) : { minW: 2, minH: 2 }
-    // Cap minW at available columns so widgets don't overflow on narrow grids
     const effectiveMinW = Math.min(min.minW, cols)
-    return { ...l, minW: effectiveMinW, minH: min.minH, w: Math.max(Math.min(l.w, cols), effectiveMinW), h: Math.max(l.h, min.minH) }
+    const w = Math.max(Math.min(l.w, cols), effectiveMinW)
+    // Ensure x doesn't push the widget off the right edge of the grid
+    const x = Math.min(l.x, Math.max(0, cols - w))
+    return { ...l, x, minW: effectiveMinW, minH: min.minH, w, h: Math.max(l.h, min.minH) }
   }
 
   const displayLayouts = layouts.map(l => ({ ...clampLayout(l), static: !isAdmin }))
