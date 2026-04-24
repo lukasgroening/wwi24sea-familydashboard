@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, forwardRef, useMemo } from 'react'
+import { useState, useRef, useEffect, forwardRef } from 'react'
 import { X, Cloud, Calendar, CheckSquare, LayoutList, Plus } from 'lucide-react'
-import { Responsive, WidthProvider } from 'react-grid-layout'
+import { ReactGridLayout } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import { WIDGETS } from '../widgets'
@@ -8,15 +8,99 @@ import { useAuthStore } from '../store/authStore'
 import { useDashboardStore } from '../store/dashboardStore'
 import type { Role } from '../types'
 
-const ResponsiveGridLayout = WidthProvider(Responsive)
+const ink = '#2a241d'
+const ink2 = '#554a3c'
+const inkSoft = '#8a7d6a'
+const paper = '#f5efe3'
+const paper2 = '#ede5d2'
+const border = '#ddd3be'
+const accent = 'oklch(55% 0.12 146)'
 
-// ... (ink colors and helper functions stay the same)
+function isAdminRole(role: Role | undefined): boolean {
+  return role === 'Familien-Administrator' || role === 'System-Administrator'
+}
+
+function canSeeWidget(widgetRole: Role | undefined, userRole: Role | undefined): boolean {
+  if (!widgetRole) return true
+  if (isAdminRole(userRole)) return true
+  return widgetRole === 'Nutzer'
+}
+
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'Guten Morgen'
+  if (h < 18) return 'Guten Tag'
+  return 'Guten Abend'
+}
+
+const todayStr = new Date().toLocaleDateString('de-DE', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+})
+
+interface WidgetShellProps extends React.HTMLAttributes<HTMLDivElement> {
+  onRemove: () => void
+  variant: 'weather' | 'default'
+  children: React.ReactNode
+  title?: string
+  isAdmin?: boolean
+}
+
+const WidgetShell = forwardRef<HTMLDivElement, WidgetShellProps>(
+  ({ onRemove, variant, children, title, isAdmin, className = '', style, ...rest }, ref) => {
+    const isWeather = variant === 'weather'
+    return (
+      <div
+        ref={ref}
+        className={`group h-full overflow-hidden relative ${className}`}
+        style={{
+          borderRadius: 12,
+          padding: 20,
+          background: isWeather ? accent : paper,
+          border: isWeather ? 'none' : `1px solid ${border}`,
+          boxShadow: '0 1px 4px rgba(42,36,29,0.06)',
+          ...style,
+        }}
+        {...rest}
+      >
+        {/* drag handle */}
+        {isAdmin && (
+          <div className="widget-drag-handle absolute top-2 left-2 right-10 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div style={{ width: 28, height: 3, borderRadius: 2, background: isWeather ? 'rgba(245,239,227,0.4)' : border }} />
+          </div>
+        )}
+        {/* remove button */}
+        {isAdmin && (
+          <button
+            onClick={onRemove}
+            className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+            style={{
+              width: 26, height: 26, borderRadius: 6,
+              background: isWeather ? 'rgba(245,239,227,0.15)' : 'rgba(42,36,29,0.06)',
+              border: 'none', cursor: 'pointer',
+              color: isWeather ? paper : ink2,
+              minHeight: 'unset', minWidth: 'unset',
+            }}
+            title="Widget entfernen"
+          >
+            <X size={12} />
+          </button>
+        )}
+        {title && (
+          <div style={{ fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: inkSoft, marginBottom: 14 }}>
+            {title}
+          </div>
+        )}
+        {children}
+      </div>
+    )
+  }
+)
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
   const {
     widgets: dashboardWidgets,
-    layouts: storeLayouts,
+    layouts,
     addWidget,
     removeWidget,
     updateLayouts,
@@ -30,9 +114,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadFromBackend()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const containerRef = useRef<HTMLDivElement>(null)
+  const [containerWidth, setContainerWidth] = useState(1200)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) setContainerWidth(entry.contentRect.width)
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // Responsive columns: fewer on small screens
+  const cols = containerWidth < 480 ? 2 : containerWidth < 768 ? 4 : 12
 
   const WIDGET_MINS: Record<string, { minW: number; minH: number }> = {
     weather:  { minW: 2, minH: 3 },
@@ -42,42 +141,22 @@ export default function DashboardPage() {
     minigame: { minW: 3, minH: 2 },
   }
 
-  const clampLayout = (l: { i: string; x: number; y: number; w: number; h: number }, currentCols: number) => {
+  const clampLayout = (l: { i: string; x: number; y: number; w: number; h: number }) => {
     const widgetId = dashboardWidgets.find(w => w.instanceId === l.i)?.widgetId
     const min = widgetId ? (WIDGET_MINS[widgetId] ?? { minW: 2, minH: 2 }) : { minW: 2, minH: 2 }
-    
-    const effectiveMinW = Math.min(min.minW, currentCols)
-    // Auf schmalen Screens (1-2 Spalten) erzwingen wir volle Breite
-    const w = currentCols <= 2 ? currentCols : Math.max(Math.min(l.w, currentCols), effectiveMinW)
-    const x = currentCols <= 2 ? 0 : Math.min(l.x, Math.max(0, currentCols - w))
-    
-    return { ...l, x, minW: effectiveMinW, minH: min.minH, w, h: Math.max(l.h, min.minH) }
+    return { ...l, minW: min.minW, minH: min.minH, w: Math.max(l.w, min.minW), h: Math.max(l.h, min.minH) }
   }
 
-  // useMemo ist extrem wichtig, damit das Grid nicht flackert oder sich verschluckt
-  const responsiveLayouts = useMemo(() => {
-    const lg = storeLayouts.map(l => ({ ...clampLayout(l, 12), static: !isAdmin }))
-    return {
-      lg,
-      md: storeLayouts.map(l => clampLayout(l, 10)),
-      sm: storeLayouts.map(l => clampLayout(l, 6)),
-      xs: storeLayouts.map(l => clampLayout(l, 2)),
-      xxs: storeLayouts.map(l => clampLayout(l, 1))
-    }
-  }, [storeLayouts, dashboardWidgets, isAdmin])
+  const displayLayouts = layouts.map(l => ({ ...clampLayout(l), static: !isAdmin }))
 
-  const handleLayoutChange = (current: any, allLayouts: any) => {
-    // Nur speichern, wenn wir im Desktop-Modus (lg) sind
-    // react-grid-layout übergibt im allLayouts-Objekt alle Breakpoints
-    if (allLayouts.lg) {
-      updateLayouts(allLayouts.lg.map((l: any) => clampLayout(l, 12)))
-    }
+  const handleLayoutChange = (newLayout: Array<{ i: string; x: number; y: number; w: number; h: number }>) => {
+    updateLayouts(newLayout.map(clampLayout))
   }
 
   return (
-    <div style={{ flex: 1, padding: '12px 12px 40px', overflowY: 'auto', minWidth: 0 }} ref={containerRef}>
+    <div style={{ flex: 1, padding: '28px 28px 40px', overflowY: 'auto', minWidth: 0 }} ref={containerRef}>
       {/* Topbar */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 16, flexWrap: 'wrap', padding: '12px 16px 0' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, gap: 16, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontFamily: '"Instrument Serif", serif', fontSize: 'clamp(22px, 3vw, 32px)', color: ink, lineHeight: 1.1, margin: 0 }}>
             {getGreeting()}{user?.username ? `, ${user.username}` : ''}.
@@ -100,12 +179,13 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <ResponsiveGridLayout
+      {/* Grid */}
+      <ReactGridLayout
         className="layout"
-        layouts={responsiveLayouts}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-        cols={{ lg: 12, md: 10, sm: 6, xs: 2, xxs: 1 }}
+        layout={displayLayouts}
+        cols={cols}
         rowHeight={90}
+        width={containerWidth - 56}
         onLayoutChange={handleLayoutChange}
         onDragStop={saveToBackend}
         onResizeStop={saveToBackend}
@@ -114,8 +194,6 @@ export default function DashboardPage() {
         isDraggable={isAdmin}
         compactType="vertical"
         margin={[12, 12]}
-        useCSSTransforms={true}
-        measureBeforeMount={true} // Wichtig für korrektes initiales Mobile-Rendering
       >
         {dashboardWidgets.map((instance) => {
           const config = WIDGETS.find((w) => w.id === instance.widgetId)
@@ -125,23 +203,21 @@ export default function DashboardPage() {
           const isWeather = instance.widgetId === 'weather'
           
           return (
-            <div key={instance.instanceId}>
-              <WidgetShell
-                onRemove={() => removeWidget(instance.instanceId)}
-                variant={isWeather ? 'weather' : 'default'}
-                title={isWeather ? undefined : config.name}
-                isAdmin={isAdmin}
-                isMobile={true} // Auf Mobile immer Touch-freundlichere UI
-              >
-                <config.component 
-                  settings={instance.settings}
-                  onSettingsChange={(s) => updateWidgetSettings(instance.instanceId, s)}
-                />
-              </WidgetShell>
-            </div>
+            <WidgetShell
+              key={instance.instanceId}
+              onRemove={() => removeWidget(instance.instanceId)}
+              variant={isWeather ? 'weather' : 'default'}
+              title={isWeather ? undefined : config.name}
+              isAdmin={isAdmin}
+            >
+              <config.component 
+                settings={instance.settings}
+                onSettingsChange={(s) => updateWidgetSettings(instance.instanceId, s)}
+              />
+            </WidgetShell>
           )
         })}
-      </ResponsiveGridLayout>
+      </ReactGridLayout>
 
       {/* Add Widget Modal */}
       {showAddModal && (
