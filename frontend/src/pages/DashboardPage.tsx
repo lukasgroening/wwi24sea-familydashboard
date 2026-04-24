@@ -154,14 +154,26 @@ export default function DashboardPage() {
     
     // In einer schmalen Ansicht (z.B. 1 oder 2 Spalten) darf das Minimum nicht größer als die Spaltenanzahl sein
     const effectiveMinW = Math.min(min.minW, currentCols)
-    const w = Math.max(Math.min(l.w, currentCols), effectiveMinW)
-    const x = Math.min(l.x, Math.max(0, currentCols - w))
+    // Auf Mobile (1 Spalte) forcieren wir die volle Breite
+    const w = currentCols <= 2 ? currentCols : Math.max(Math.min(l.w, currentCols), effectiveMinW)
+    const x = currentCols <= 2 ? 0 : Math.min(l.x, Math.max(0, currentCols - w))
     
     return { ...l, x, minW: effectiveMinW, minH: min.minH, w, h: Math.max(l.h, min.minH) }
   }
 
-  // Wir nutzen lg als Master-Layout
+  // Master-Layout (12 cols)
   const currentLayout = layouts.map(l => ({ ...clampLayout(l, 12), static: !isAdmin }))
+
+  // Hilfsfunktion um Layouts für alle Breakpoints zu generieren
+  const getResponsiveLayouts = () => {
+    return {
+      lg: currentLayout,
+      md: layouts.map(l => clampLayout(l, 10)),
+      sm: layouts.map(l => clampLayout(l, 6)),
+      xs: layouts.map(l => clampLayout(l, 2)),
+      xxs: layouts.map(l => clampLayout(l, 1))
+    }
+  }
 
   const handleLayoutChange = (current: any) => {
     // Wir speichern nur, wenn wir in der Desktop-Ansicht (12 Spalten) sind, 
@@ -200,7 +212,7 @@ export default function DashboardPage() {
 
       <ResponsiveGridLayout
         className="layout"
-        layouts={{ lg: currentLayout, md: currentLayout, sm: currentLayout, xs: currentLayout, xxs: currentLayout }}
+        layouts={getResponsiveLayouts()}
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
         cols={{ lg: 12, md: 10, sm: 6, xs: 2, xxs: 1 }}
         rowHeight={90}
