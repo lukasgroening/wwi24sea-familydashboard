@@ -140,24 +140,17 @@ export const useDashboardStore = create<DashboardState>()(
       loadFromBackend: async () => {
         try {
           const { data } = await api.get('/api/dashboard/widgets')
-          if (data && data.length > 0) {
-            const { widgets, layouts } = backendToState(data)
-            set({ widgets, layouts })
-            // Falls Clamping Größen korrigiert hat → direkt zurück speichern
+          const { widgets, layouts } = backendToState(data)
+          set({ widgets, layouts })
+          
+          // Wir speichern nur zurück, wenn das Clamping (Größenkorrektur) etwas geändert hat
+          // Das ist ein Sicherheitsnetz für den Fall, dass Backend-Daten invalide Größen haben
+          const clamped = clampLayouts(layouts, widgets)
+          if (JSON.stringify(clamped) !== JSON.stringify(layouts)) {
             await get().saveToBackend()
-          } else {
-            // Backend leer -> Jetzt erst Defaults setzen und speichern
-            const user = (await import('./authStore')).useAuthStore.getState().user
-            if (isAdminRole(user?.role)) {
-              set({ widgets: defaultWidgets, layouts: defaultLayouts })
-              await get().saveToBackend()
-            }
           }
         } catch {
-          // Bei Fehler (z.B. Offline) Fallback auf Defaults, falls gar nichts da ist
-          if (get().widgets.length === 0) {
-            set({ widgets: defaultWidgets, layouts: defaultLayouts })
-          }
+          // Bei Fehlern (Offline) lassen wir den State wie er ist (ggf. localStorage Fallback)
         }
       },
 
