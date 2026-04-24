@@ -158,7 +158,7 @@ export default function LoginPage() {
             <label style={{ display: 'block', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#554a3c', marginBottom: 6 }}>
               Benutzername
             </label>
-            <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Mama_Admin" required style={inputStyle} />
+            <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Benutzername" required style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#554a3c', marginBottom: 6 }}>
@@ -191,13 +191,6 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <div style={{ marginTop: 28, padding: '12px 16px', background: 'rgba(255,255,255,0.5)', borderRadius: 8, border: '1px solid rgba(42,36,29,0.1)' }}>
-          <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#8a7d6a', marginBottom: 6 }}>Demo</div>
-          <div style={{ fontSize: 11, color: '#554a3c', lineHeight: 1.8 }}>
-            <div>Mama_Admin / geheim123123</div>
-            <div>system_admin / system123</div>
-          </div>
-        </div>
       </div>
 
       {/* Right panel */}
