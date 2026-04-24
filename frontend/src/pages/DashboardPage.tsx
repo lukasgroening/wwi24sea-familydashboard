@@ -100,6 +100,11 @@ const WidgetShell = forwardRef<HTMLDivElement, WidgetShellProps>(
   }
 )
 
+import { Responsive, WidthProvider } from 'react-grid-layout'
+const ResponsiveGridLayout = WidthProvider(Responsive)
+
+// ... (existing helper functions ink, ink2, etc.)
+
 export default function DashboardPage() {
   const { user } = useAuthStore()
   const {
@@ -118,7 +123,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadFromBackend()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -134,9 +138,7 @@ export default function DashboardPage() {
     return () => observer.disconnect()
   }, [])
 
-  // Mobile: 1 Spalte (Widgets full-width, gestapelt), Desktop: 12 Spalten
   const isMobile = containerWidth < 600
-  const cols = isMobile ? 1 : containerWidth < 768 ? 4 : 12
 
   const WIDGET_MINS: Record<string, { minW: number; minH: number }> = {
     weather:  { minW: 2, minH: 3 },
@@ -146,20 +148,28 @@ export default function DashboardPage() {
     minigame: { minW: 3, minH: 2 },
   }
 
-  const clampLayout = (l: { i: string; x: number; y: number; w: number; h: number }) => {
+  const clampLayout = (l: { i: string; x: number; y: number; w: number; h: number }, currentCols: number) => {
     const widgetId = dashboardWidgets.find(w => w.instanceId === l.i)?.widgetId
     const min = widgetId ? (WIDGET_MINS[widgetId] ?? { minW: 2, minH: 2 }) : { minW: 2, minH: 2 }
-    const effectiveMinW = Math.min(min.minW, cols)
-    const w = Math.max(Math.min(l.w, cols), effectiveMinW)
-    // Ensure x doesn't push the widget off the right edge of the grid
-    const x = Math.min(l.x, Math.max(0, cols - w))
+    
+    // In einer schmalen Ansicht (z.B. 1 oder 2 Spalten) darf das Minimum nicht größer als die Spaltenanzahl sein
+    const effectiveMinW = Math.min(min.minW, currentCols)
+    const w = Math.max(Math.min(l.w, currentCols), effectiveMinW)
+    const x = Math.min(l.x, Math.max(0, currentCols - w))
+    
     return { ...l, x, minW: effectiveMinW, minH: min.minH, w, h: Math.max(l.h, min.minH) }
   }
 
-  const displayLayouts = layouts.map(l => ({ ...clampLayout(l), static: !isAdmin }))
+  // Wir nutzen lg als Master-Layout
+  const currentLayout = layouts.map(l => ({ ...clampLayout(l, 12), static: !isAdmin }))
 
-  const handleLayoutChange = (newLayout: Array<{ i: string; x: number; y: number; w: number; h: number }>) => {
-    updateLayouts(newLayout.map(clampLayout))
+  const handleLayoutChange = (current: any) => {
+    // Wir speichern nur, wenn wir in der Desktop-Ansicht (12 Spalten) sind, 
+    // um das "Master"-Layout nicht durch Mobile-Verschiebungen zu korrumpieren.
+    // React-Grid-Layout berechnet die anderen Ansichten on-the-fly.
+    if (containerWidth >= 1200) {
+      updateLayouts(current.map((l: any) => clampLayout(l, 12)))
+    }
   }
 
   return (
@@ -188,14 +198,12 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Grid — key={cols} erzwingt Neustart wenn Breakpoint wechselt */}
-      <ReactGridLayout
-        key={cols}
+      <ResponsiveGridLayout
         className="layout"
-        layout={displayLayouts}
-        cols={cols}
+        layouts={{ lg: currentLayout, md: currentLayout, sm: currentLayout, xs: currentLayout, xxs: currentLayout }}
+        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+        cols={{ lg: 12, md: 10, sm: 6, xs: 2, xxs: 1 }}
         rowHeight={90}
-        width={containerWidth - (isMobile ? 0 : 56)}
         onLayoutChange={handleLayoutChange}
         onDragStop={saveToBackend}
         onResizeStop={saveToBackend}
@@ -204,6 +212,7 @@ export default function DashboardPage() {
         isDraggable={isAdmin}
         compactType="vertical"
         margin={[12, 12]}
+        useCSSTransforms={true}
       >
         {dashboardWidgets.map((instance) => {
           const config = WIDGETS.find((w) => w.id === instance.widgetId)
@@ -213,22 +222,23 @@ export default function DashboardPage() {
           const isWeather = instance.widgetId === 'weather'
           
           return (
-            <WidgetShell
-              key={instance.instanceId}
-              onRemove={() => removeWidget(instance.instanceId)}
-              variant={isWeather ? 'weather' : 'default'}
-              title={isWeather ? undefined : config.name}
-              isAdmin={isAdmin}
-              isMobile={isMobile}
-            >
-              <config.component 
-                settings={instance.settings}
-                onSettingsChange={(s) => updateWidgetSettings(instance.instanceId, s)}
-              />
-            </WidgetShell>
+            <div key={instance.instanceId}>
+              <WidgetShell
+                onRemove={() => removeWidget(instance.instanceId)}
+                variant={isWeather ? 'weather' : 'default'}
+                title={isWeather ? undefined : config.name}
+                isAdmin={isAdmin}
+                isMobile={isMobile}
+              >
+                <config.component 
+                  settings={instance.settings}
+                  onSettingsChange={(s) => updateWidgetSettings(instance.instanceId, s)}
+                />
+              </WidgetShell>
+            </div>
           )
         })}
-      </ReactGridLayout>
+      </ResponsiveGridLayout>
 
       {/* Add Widget Modal */}
       {showAddModal && (
