@@ -20,11 +20,14 @@ export default function AppLayout() {
         />
       )}
 
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
-        onInviteClick={() => setInviteOpen(true)}
-      />
+      {/* Wrapper: 0 width on mobile (sidebar is fixed/overlay), 224px on desktop */}
+      <div className="w-0 md:w-56 shrink-0">
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          onInviteClick={() => setInviteOpen(true)}
+        />
+      </div>
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
