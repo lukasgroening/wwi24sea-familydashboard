@@ -134,9 +134,9 @@ export default function DashboardPage() {
     return () => observer.disconnect()
   }, [])
 
-  // Responsive columns: fewer on small screens
-  const cols = containerWidth < 480 ? 2 : containerWidth < 768 ? 4 : 12
-  const isMobile = containerWidth < 480
+  // Mobile: 1 Spalte (Widgets full-width, gestapelt), Desktop: 12 Spalten
+  const isMobile = containerWidth < 600
+  const cols = isMobile ? 1 : containerWidth < 768 ? 4 : 12
 
   const WIDGET_MINS: Record<string, { minW: number; minH: number }> = {
     weather:  { minW: 2, minH: 3 },
@@ -188,8 +188,9 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Grid */}
+      {/* Grid — key={cols} erzwingt Neustart wenn Breakpoint wechselt */}
       <ReactGridLayout
+        key={cols}
         className="layout"
         layout={displayLayouts}
         cols={cols}

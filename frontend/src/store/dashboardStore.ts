@@ -190,7 +190,8 @@ export const useDashboardStore = create<DashboardState>()(
 
       updateLayouts: (layouts) => {
         set({ layouts })
-        get().saveToBackend()
+        // Kein automatisches saveToBackend hier — nur explizite Drag/Resize-Events speichern
+        // (verhindert, dass Mobile-Layouts den Desktop-Stand überschreiben)
       },
 
       updateWidgetSettings: (instanceId, settings) => {
