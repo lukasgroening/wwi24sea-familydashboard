@@ -210,8 +210,7 @@ export const useDashboardStore = create<DashboardState>()(
 
       updateLayouts: (layouts) => {
         set({ layouts })
-        // Kein saveToBackend hier — wird zu oft gefeuert (jeder Drag/Resize)
-        // Layout wird nur gespeichert wenn explizit Widgets hinzugefügt/entfernt werden
+        get().saveToBackend()
       },
 
       updateWidgetSettings: (instanceId, settings) => {
