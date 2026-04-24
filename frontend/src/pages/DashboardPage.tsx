@@ -43,10 +43,11 @@ interface WidgetShellProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode
   title?: string
   isAdmin?: boolean
+  isMobile?: boolean
 }
 
 const WidgetShell = forwardRef<HTMLDivElement, WidgetShellProps>(
-  ({ onRemove, variant, children, title, isAdmin, className = '', style, ...rest }, ref) => {
+  ({ onRemove, variant, children, title, isAdmin, isMobile, className = '', style, ...rest }, ref) => {
     const isWeather = variant === 'weather'
     return (
       <div
@@ -62,17 +63,20 @@ const WidgetShell = forwardRef<HTMLDivElement, WidgetShellProps>(
         }}
         {...rest}
       >
-        {/* drag handle */}
+        {/* drag handle — always visible on touch devices, hover-only on desktop */}
         {isAdmin && (
-          <div className="widget-drag-handle absolute top-2 left-2 right-10 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div
+            className={`widget-drag-handle absolute top-2 left-2 right-10 h-6 cursor-grab z-10 transition-opacity flex items-center justify-center ${isMobile ? 'opacity-50' : 'opacity-0 group-hover:opacity-100'}`}
+            style={{ touchAction: 'none' }}
+          >
             <div style={{ width: 28, height: 3, borderRadius: 2, background: isWeather ? 'rgba(245,239,227,0.4)' : border }} />
           </div>
         )}
-        {/* remove button */}
+        {/* remove button — always visible on mobile */}
         {isAdmin && (
           <button
             onClick={onRemove}
-            className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+            className={`absolute top-2 right-2 z-20 transition-opacity flex items-center justify-center ${isMobile ? 'opacity-70' : 'opacity-0 group-hover:opacity-100'}`}
             style={{
               width: 26, height: 26, borderRadius: 6,
               background: isWeather ? 'rgba(245,239,227,0.15)' : 'rgba(42,36,29,0.06)',
@@ -132,6 +136,7 @@ export default function DashboardPage() {
 
   // Responsive columns: fewer on small screens
   const cols = containerWidth < 480 ? 2 : containerWidth < 768 ? 4 : 12
+  const isMobile = containerWidth < 480
 
   const WIDGET_MINS: Record<string, { minW: number; minH: number }> = {
     weather:  { minW: 2, minH: 3 },
@@ -144,7 +149,9 @@ export default function DashboardPage() {
   const clampLayout = (l: { i: string; x: number; y: number; w: number; h: number }) => {
     const widgetId = dashboardWidgets.find(w => w.instanceId === l.i)?.widgetId
     const min = widgetId ? (WIDGET_MINS[widgetId] ?? { minW: 2, minH: 2 }) : { minW: 2, minH: 2 }
-    return { ...l, minW: min.minW, minH: min.minH, w: Math.max(l.w, min.minW), h: Math.max(l.h, min.minH) }
+    // Cap minW at available columns so widgets don't overflow on narrow grids
+    const effectiveMinW = Math.min(min.minW, cols)
+    return { ...l, minW: effectiveMinW, minH: min.minH, w: Math.max(Math.min(l.w, cols), effectiveMinW), h: Math.max(l.h, min.minH) }
   }
 
   const displayLayouts = layouts.map(l => ({ ...clampLayout(l), static: !isAdmin }))
@@ -154,7 +161,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div style={{ flex: 1, padding: '28px 28px 40px', overflowY: 'auto', minWidth: 0 }} ref={containerRef}>
+    <div style={{ flex: 1, padding: isMobile ? '12px 12px 32px' : '28px 28px 40px', overflowY: 'auto', minWidth: 0 }} ref={containerRef}>
       {/* Topbar */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, gap: 16, flexWrap: 'wrap' }}>
         <div>
@@ -185,7 +192,7 @@ export default function DashboardPage() {
         layout={displayLayouts}
         cols={cols}
         rowHeight={90}
-        width={containerWidth - 56}
+        width={containerWidth - (isMobile ? 0 : 56)}
         onLayoutChange={handleLayoutChange}
         onDragStop={saveToBackend}
         onResizeStop={saveToBackend}
@@ -209,6 +216,7 @@ export default function DashboardPage() {
               variant={isWeather ? 'weather' : 'default'}
               title={isWeather ? undefined : config.name}
               isAdmin={isAdmin}
+              isMobile={isMobile}
             >
               <config.component 
                 settings={instance.settings}

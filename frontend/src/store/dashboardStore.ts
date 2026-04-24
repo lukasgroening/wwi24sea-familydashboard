@@ -75,19 +75,6 @@ function getDefaultSettings(widgetId: string): Record<string, unknown> {
   return {}
 }
 
-const defaultWidgets: DashboardWidgetInstance[] = [
-  { instanceId: 'weather-default', widgetId: 'weather', colSpan: 3, rowSpan: 4, settings: { ...DEFAULT_WEATHER_SETTINGS } },
-  { instanceId: 'calendar-default', widgetId: 'calendar', colSpan: 5, rowSpan: 4, settings: { ...DEFAULT_CALENDAR_SETTINGS } },
-  { instanceId: 'todo-default', widgetId: 'todo', colSpan: 4, rowSpan: 2, settings: {} },
-  { instanceId: 'schedule-default', widgetId: 'schedule', colSpan: 7, rowSpan: 2, settings: {} },
-]
-
-const defaultLayouts: LayoutItem[] = [
-  { i: 'weather-default',   x: 0, y: 0, w: 3, h: 4, minW: 3, minH: 4 },
-  { i: 'calendar-default',  x: 3, y: 0, w: 6, h: 5, minW: 4, minH: 4 },
-  { i: 'todo-default',      x: 9, y: 0, w: 3, h: 3, minW: 3, minH: 3 },
-  { i: 'schedule-default',  x: 0, y: 4, w: 8, h: 3, minW: 4, minH: 3 },
-]
 
 /** Wandelt den Store-State in das Backend-Format um */
 function stateToBackendPayload(
