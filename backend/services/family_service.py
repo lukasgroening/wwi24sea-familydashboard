@@ -5,6 +5,12 @@ from typing import List
 from fastapi import HTTPException, status
 from models.family import Family, FamilyCreate, FamilyPublic
 from models.user import User
+from models.note import Note
+from models.todo import ToDo
+from models.schedule import ScheduleEntry
+from models.calendar import CalendarEvent, CalendarSource
+from models.game_score import GameScore
+from models.widget import WidgetConfig
 
 
 def generate_join_code(length: int = 12) -> str:
@@ -57,19 +63,51 @@ def create_family(
 
 
 def delete_family(session: Session, family_id: int) -> None:
-    """Löscht eine Familie und setzt die family_id aller Mitglieder auf None."""
+    """Löscht eine Familie und alle verknüpften Daten."""
     family = session.get(Family, family_id)
     if not family:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Familie nicht gefunden."
         )
 
-    # family_id bei allen Mitgliedern entfernen, um Fremdschlüssel-Konflikte zu vermeiden
+    # Alle verknüpften Daten löschen oder entkoppeln
+    #  User: family_id auf None setzen
     members = session.exec(select(User).where(User.family_id == family_id)).all()
     for member in members:
         member.family_id = None
         session.add(member)
-
+    # Daten löschen
+    notes = session.exec(select(Note).where(Note.family_id == family_id)).all()
+    for note in notes:
+        session.delete(note)
+    
+    todos = session.exec(select(ToDo).where(ToDo.family_id == family_id)).all()
+    for todo in todos:
+        session.delete(todo)
+    
+    schedules = session.exec(select(ScheduleEntry).where(ScheduleEntry.family_id == family_id)).all()
+    for schedule in schedules:
+        session.delete(schedule)
+    
+    calendar_events = session.exec(select(CalendarEvent).where(CalendarEvent.family_id == family_id)).all()
+    for event in calendar_events:
+        session.delete(event)
+    
+    calendar_sources = session.exec(select(CalendarSource).where(CalendarSource.family_id == family_id)).all()
+    for source in calendar_sources:
+        session.delete(source)
+    
+    game_scores = session.exec(select(GameScore).where(GameScore.family_id == family_id)).all()
+    for score in game_scores:
+        session.delete(score)
+    
+    widgets = session.exec(select(WidgetConfig).where(WidgetConfig.family_id == family_id)).all()
+    for widget in widgets:
+        session.delete(widget)
+    
+    session.flush()
+    
+    # Familie löschen
     session.delete(family)
     session.commit()
 
