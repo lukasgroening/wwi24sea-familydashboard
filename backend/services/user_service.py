@@ -3,6 +3,11 @@ from typing import List, Optional
 from fastapi import HTTPException, status
 from models.user import User, UserCreate, UserPublic, UserUpdate, UserRegister, Role
 from models.family import Family, FamilyCreate
+from models.todo import ToDo
+from models.schedule import ScheduleEntry
+from models.calendar import CalendarEvent
+from models.game_score import GameScore
+from models.widget import WidgetConfig
 from auth import get_password_hash
 from services import family_service, dashboard_service
 
@@ -20,12 +25,16 @@ def get_all_users(
     System-Admin sieht alle (optional gefiltert).
     Familien-Admin sieht nur seine Familie.
     """
+
     if current_user.role == Role.SYSTEM_ADMIN:
         if family_id is not None:
             return session.exec(select(User).where(User.family_id == family_id)).all()
         return session.exec(select(User)).all()
 
-    # Familien-Admin sieht nur seine Familie
+    # Familien-Admin sieht nur seine eigene Familie
+    if current_user.family_id is None:
+        return [current_user]
+    
     return session.exec(
         select(User).where(User.family_id == current_user.family_id)
     ).all()
@@ -171,6 +180,33 @@ def delete_user(session: Session, user_id: int, current_user: User) -> None:
 
     _check_last_admin(session, user, "gelöscht")
 
+    # Verknüpfte Daten behandeln, bevor User gelöscht wird
+    todos = session.exec(select(ToDo).where(ToDo.user_id == user_id)).all()
+    for todo in todos:
+        todo.user_id = None
+        session.add(todo)
+    
+    schedules = session.exec(select(ScheduleEntry).where(ScheduleEntry.user_id == user_id)).all()
+    for schedule in schedules:
+        schedule.user_id = None
+        session.add(schedule)
+     
+    calendar_events = session.exec(select(CalendarEvent).where(CalendarEvent.user_id == user_id)).all()
+    for event in calendar_events:
+        event.user_id = None
+        session.add(event)
+    
+    game_scores = session.exec(select(GameScore).where(GameScore.user_id == user_id)).all()
+    for score in game_scores:
+        session.delete(score)
+    
+    widgets = session.exec(select(WidgetConfig).where(WidgetConfig.user_id == user_id)).all()
+    for widget in widgets:
+        session.delete(widget)
+    
+    session.flush()
+    
+    # User löschen
     session.delete(user)
     session.commit()
 
