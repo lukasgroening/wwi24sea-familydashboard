@@ -18,7 +18,6 @@ const cardStyle: React.CSSProperties = {
   background: 'white',
   border: '1px solid var(--color-stone-border)',
   borderRadius: '16px',
-  padding: '24px',
 }
 
 const inputStyle: React.CSSProperties = {
@@ -159,7 +158,7 @@ export default function AdminPage() {
       </div>
 
       {formMode !== null && (
-        <div style={cardStyle}>
+        <div style={cardStyle} className="p-4 md:p-6">
           <h2 className="text-base font-semibold mb-4">
             {formMode === 'edit' && editUser ? `Benutzer bearbeiten: ${editUser.username}` : 'Neuen Benutzer anlegen'}
           </h2>
@@ -228,82 +227,80 @@ export default function AdminPage() {
 
       <ErrorAlert message={deleteError} onDismiss={() => setDeleteError('')} />
 
-      <div style={cardStyle}>
+      <div style={cardStyle} className="p-4 md:p-6">
         {isLoading && <p className="text-sm" style={{ color: 'var(--color-stone-600)' }}>Lade Benutzer...</p>}
         {error && <p className="text-sm" style={{ color: 'var(--color-danger-700)' }}>Fehler beim Laden der Benutzer.</p>}
         {!isLoading && users.length === 0 && (
           <p className="text-sm" style={{ color: 'var(--color-stone-600)' }}>Keine Benutzer gefunden.</p>
         )}
         {users.length > 0 && (
-          <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-stone-border)' }}>
-                <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>ID</th>
-                <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Benutzername</th>
-                <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Rolle</th>
-                <th className="text-right pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Aktionen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id} style={{ borderBottom: '1px solid var(--color-stone-row)' }}>
-                  <td className="py-3" style={{ color: 'var(--color-stone-500)' }}>#{user.id}</td>
-                  <td className="py-3 font-medium">{user.username}</td>
-                  <td className="py-3">
-                    <span
-                      className="px-2.5 py-1 rounded-full text-xs font-medium"
-                      style={ROLE_BADGE[user.role] ?? { background: 'var(--color-stone-100)', color: 'var(--color-stone-700)' }}
-                    >
+          <div className="flex flex-col gap-2">
+            {users.map((user) => (
+              <div
+                key={user.id}
+                className="flex flex-col gap-2 px-3 py-3 rounded-xl sm:flex-row sm:items-center sm:justify-between"
+                style={{ background: 'var(--color-stone-50)', border: '1px solid var(--color-stone-border)' }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0"
+                    style={{ background: 'var(--color-sage-500)' }}>
+                    {user.username[0]?.toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{user.username}</span>
+                      <span className="text-xs" style={{ color: 'var(--color-stone-400)' }}>#{user.id}</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium inline-block mt-0.5"
+                      style={ROLE_BADGE[user.role] ?? { background: 'var(--color-stone-100)', color: 'var(--color-stone-700)' }}>
                       {user.role}
                     </span>
-                  </td>
-                  <td className="py-3 text-right">
-                    {(!isSystemAdmin && user.role === 'System-Administrator') ? (
-                      <span className="text-xs italic" style={{ color: 'var(--color-stone-400)' }}>Schreibgeschützt</span>
-                    ) : (
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => openEdit(user)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                          style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-900)' }}
-                        >
-                          Bearbeiten
-                        </button>
-                        {deleteConfirm === user.id ? (
-                          <>
-                            <button
-                              onClick={() => deleteMutation.mutate(user.id)}
-                              disabled={deleteMutation.isPending}
-                              className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                              style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
-                            >
-                              Bestätigen
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirm(null)}
-                              className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                              style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
-                            >
-                              Abbrechen
-                            </button>
-                          </>
-                        ) : (
+                  </div>
+                </div>
+                <div className="flex gap-1 pl-9 sm:pl-0">
+                  {(!isSystemAdmin && user.role === 'System-Administrator') ? (
+                    <span className="text-xs italic" style={{ color: 'var(--color-stone-400)' }}>Schreibgeschützt</span>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => openEdit(user)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-900)' }}
+                      >
+                        Bearbeiten
+                      </button>
+                      {deleteConfirm === user.id ? (
+                        <>
                           <button
-                            onClick={() => setDeleteConfirm(user.id)}
+                            onClick={() => deleteMutation.mutate(user.id)}
+                            disabled={deleteMutation.isPending}
                             className="px-3 py-1.5 rounded-lg text-xs font-medium"
                             style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
                           >
-                            Löschen
+                            Bestätigen
                           </button>
-                        )}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                          <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                            style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
+                          >
+                            Abbrechen
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteConfirm(user.id)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                          style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
+                        >
+                          Löschen
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

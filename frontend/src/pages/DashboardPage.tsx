@@ -119,6 +119,7 @@ export default function DashboardPage() {
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(1200)
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
 
   useEffect(() => {
     const el = containerRef.current
@@ -128,6 +129,12 @@ export default function DashboardPage() {
     })
     observer.observe(el)
     return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   // Responsive columns: fewer on small screens
@@ -153,10 +160,13 @@ export default function DashboardPage() {
     updateLayouts(newLayout.map(clampLayout))
   }
 
+  // Use viewport width for mobile detection (matches Tailwind md: breakpoint)
+  const isMobile = viewportWidth < 768
+
   return (
-    <div style={{ flex: 1, padding: '28px 28px 40px', overflowY: 'auto', minWidth: 0 }} ref={containerRef}>
+    <div style={{ flex: 1, padding: isMobile ? '16px 12px 32px' : '28px 28px 40px', overflowY: 'auto', minWidth: 0 }} ref={containerRef}>
       {/* Topbar */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, gap: 16, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: isMobile ? 20 : 28, gap: 16, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontFamily: '"Instrument Serif", serif', fontSize: 'clamp(22px, 3vw, 32px)', color: ink, lineHeight: 1.1, margin: 0 }}>
             {getGreeting()}{user?.username ? `, ${user.username}` : ''}.
@@ -179,45 +189,73 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Grid */}
-      <ReactGridLayout
-        className="layout"
-        layout={displayLayouts}
-        cols={cols}
-        rowHeight={90}
-        width={containerWidth - 56}
-        onLayoutChange={handleLayoutChange}
-        onDragStop={saveToBackend}
-        onResizeStop={saveToBackend}
-        draggableHandle=".widget-drag-handle"
-        isResizable={isAdmin}
-        isDraggable={isAdmin}
-        compactType="vertical"
-        margin={[12, 12]}
-      >
-        {dashboardWidgets.map((instance) => {
-          const config = WIDGETS.find((w) => w.id === instance.widgetId)
-          if (!config) return <div key={instance.instanceId} />
-          if (!canSeeWidget(config.requiredRole, user?.role)) return <div key={instance.instanceId} />
-          
-          const isWeather = instance.widgetId === 'weather'
-          
-          return (
-            <WidgetShell
-              key={instance.instanceId}
-              onRemove={() => removeWidget(instance.instanceId)}
-              variant={isWeather ? 'weather' : 'default'}
-              title={isWeather ? undefined : config.name}
-              isAdmin={isAdmin}
-            >
-              <config.component 
-                settings={instance.settings}
-                onSettingsChange={(s) => updateWidgetSettings(instance.instanceId, s)}
-              />
-            </WidgetShell>
-          )
-        })}
-      </ReactGridLayout>
+      {/* Mobile: simple vertical stack */}
+      {isMobile ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {dashboardWidgets.map((instance) => {
+            const config = WIDGETS.find((w) => w.id === instance.widgetId)
+            if (!config) return null
+            if (!canSeeWidget(config.requiredRole, user?.role)) return null
+
+            const isWeather = instance.widgetId === 'weather'
+
+            return (
+              <WidgetShell
+                key={instance.instanceId}
+                onRemove={() => removeWidget(instance.instanceId)}
+                variant={isWeather ? 'weather' : 'default'}
+                title={isWeather ? undefined : config.name}
+                isAdmin={isAdmin}
+                style={{ minHeight: instance.widgetId === 'calendar' ? 420 : instance.widgetId === 'minigame' ? 340 : 260 }}
+              >
+                <config.component
+                  settings={instance.settings}
+                  onSettingsChange={(s) => updateWidgetSettings(instance.instanceId, s)}
+                />
+              </WidgetShell>
+            )
+          })}
+        </div>
+      ) : (
+        <ReactGridLayout
+          className="layout"
+          layout={displayLayouts}
+          cols={cols}
+          rowHeight={90}
+          width={containerWidth - 56}
+          onLayoutChange={handleLayoutChange}
+          onDragStop={saveToBackend}
+          onResizeStop={saveToBackend}
+          draggableHandle=".widget-drag-handle"
+          isResizable={isAdmin}
+          isDraggable={isAdmin}
+          compactType="vertical"
+          margin={[12, 12]}
+        >
+          {dashboardWidgets.map((instance) => {
+            const config = WIDGETS.find((w) => w.id === instance.widgetId)
+            if (!config) return <div key={instance.instanceId} />
+            if (!canSeeWidget(config.requiredRole, user?.role)) return <div key={instance.instanceId} />
+
+            const isWeather = instance.widgetId === 'weather'
+
+            return (
+              <WidgetShell
+                key={instance.instanceId}
+                onRemove={() => removeWidget(instance.instanceId)}
+                variant={isWeather ? 'weather' : 'default'}
+                title={isWeather ? undefined : config.name}
+                isAdmin={isAdmin}
+              >
+                <config.component
+                  settings={instance.settings}
+                  onSettingsChange={(s) => updateWidgetSettings(instance.instanceId, s)}
+                />
+              </WidgetShell>
+            )
+          })}
+        </ReactGridLayout>
+      )}
 
       {/* Add Widget Modal */}
       {showAddModal && (

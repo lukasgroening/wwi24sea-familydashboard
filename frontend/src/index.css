@@ -56,9 +56,10 @@
     padding: 0;
   }
 
-  /* Allow react-grid-layout to capture touch events for drag on mobile */
-  .react-grid-item {
-    touch-action: none;
+  @media (min-width: 768px) {
+    .react-grid-item {
+      touch-action: none;
+    }
   }
 
   body {
@@ -66,17 +67,50 @@
     background-color: #f5efe3;
     color: #2a241d;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
-  /* Ensure tap targets are large enough on mobile */
   button, a, [role="button"] {
     min-height: 44px;
     min-width: 44px;
   }
 
-  /* But don't force nav links and small icons to be huge */
   nav button, nav a {
     min-height: unset;
     min-width: unset;
+  }
+
+  @media (max-width: 767px) {
+    html, body, #root {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
+    [style*="position: fixed"] {
+      overflow-y: auto;
+    }
+
+    .group {
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    .landing-footer-desc {
+      display: none;
+    }
+
+    .landing-hud {
+      flex-direction: column;
+      align-items: flex-start !important;
+    }
+
+    .login-right-panel {
+      display: none !important;
+    }
+
+    .login-left-panel {
+      max-width: 100% !important;
+      border-right: none !important;
+    }
   }
 }

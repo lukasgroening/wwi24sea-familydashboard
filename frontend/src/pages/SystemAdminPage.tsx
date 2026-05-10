@@ -19,7 +19,6 @@ const cardStyle: React.CSSProperties = {
   background: 'white',
   border: '1px solid var(--color-stone-border)',
   borderRadius: '16px',
-  padding: '24px',
 }
 
 const inputStyle: React.CSSProperties = {
@@ -184,7 +183,7 @@ export default function SystemAdminPage() {
         </div>
 
         {/* ── FAMILIEN ─────────────────────────────────────────── */}
-        <div style={cardStyle}>
+        <div style={cardStyle} className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold">Familien</h2>
             <button
@@ -240,81 +239,84 @@ export default function SystemAdminPage() {
                 return (
                   <div key={family.id} className="flex flex-col gap-0.5">
                     <div
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
+                      className="flex flex-col gap-2 px-3 py-3 rounded-xl transition-colors sm:flex-row sm:items-center sm:gap-3 sm:px-4"
                       style={{
                         background: 'var(--color-stone-50)',
                         border: '1px solid var(--color-stone-border)',
                       }}
                     >
-                      <button
-                        onClick={() =>
-                          setExpandedFamilies((prev) =>
-                            prev.includes(family.id) ? prev.filter((id) => id !== family.id) : [...prev, family.id]
-                          )
-                        }
-                        className="w-6 h-6 rounded-lg flex items-center justify-center transition-colors"
-                        style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', color: 'var(--color-stone-600)' }}
-                      >
-                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() =>
+                            setExpandedFamilies((prev) =>
+                              prev.includes(family.id) ? prev.filter((id) => id !== family.id) : [...prev, family.id]
+                            )
+                          }
+                          className="w-6 h-6 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
+                          style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', color: 'var(--color-stone-600)' }}
+                        >
+                          {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </button>
 
-                      <div
-                        className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-semibold flex-shrink-0"
-                        style={{ background: 'var(--color-sage-500)' }}
-                      >
-                        {family.name[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium">{family.name}</div>
-                        <div className="flex items-center gap-2">
-                          <code className="text-xs px-1.5 py-0.5 rounded bg-stone-200 text-stone-700 font-mono">
-                            {family.join_code}
-                          </code>
-                          <button
-                            onClick={() => regenerateJoinCodeMutation.mutate(family.id)}
-                            disabled={regenerateJoinCodeMutation.isPending}
-                            className="p-1 rounded hover:bg-stone-200 transition-colors"
-                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-stone-500)' }}
-                            title="Join-Code neu generieren"
-                          >
-                            <RefreshCw size={12} className={regenerateJoinCodeMutation.isPending ? 'animate-spin' : ''} />
-                          </button>
-                          <span className="text-xs" style={{ color: 'var(--color-stone-400)' }}>•</span>
-                          <span className="text-xs" style={{ color: 'var(--color-stone-600)' }}>
-                            {family.member_count} Mitglied{family.member_count !== 1 ? 'er' : ''}
-                          </span>
+                        <div
+                          className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-semibold flex-shrink-0"
+                          style={{ background: 'var(--color-sage-500)' }}
+                        >
+                          {family.name[0]}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium">{family.name}</div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <code className="text-xs px-1.5 py-0.5 rounded bg-stone-200 text-stone-700 font-mono">
+                              {family.join_code}
+                            </code>
+                            <button
+                              onClick={() => regenerateJoinCodeMutation.mutate(family.id)}
+                              disabled={regenerateJoinCodeMutation.isPending}
+                              className="p-1 rounded hover:bg-stone-200 transition-colors"
+                              style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-stone-500)' }}
+                              title="Join-Code neu generieren"
+                            >
+                              <RefreshCw size={12} className={regenerateJoinCodeMutation.isPending ? 'animate-spin' : ''} />
+                            </button>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex gap-1">
-                        {deleteFamilyConfirm === family.id ? (
-                          <>
+                      <div className="flex items-center justify-between gap-2 pl-9 sm:pl-0">
+                        <span className="text-xs" style={{ color: 'var(--color-stone-600)' }}>
+                          {family.member_count} Mitglied{family.member_count !== 1 ? 'er' : ''}
+                        </span>
+                        <div className="flex gap-1">
+                          {deleteFamilyConfirm === family.id ? (
+                            <>
+                              <button
+                                onClick={() => deleteFamilyMutation.mutate(family.id)}
+                                disabled={deleteFamilyMutation.isPending}
+                                className="px-2 py-1 rounded-lg text-xs font-medium"
+                                style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', color: 'var(--color-danger-700)' }}
+                              >
+                                Löschen
+                              </button>
+                              <button
+                                onClick={() => setDeleteFamilyConfirm(null)}
+                                className="px-2 py-1 rounded-lg text-xs font-medium"
+                                style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', color: 'var(--color-stone-700)' }}
+                              >
+                                Abbruch
+                              </button>
+                            </>
+                          ) : (
                             <button
-                              onClick={() => deleteFamilyMutation.mutate(family.id)}
-                              disabled={deleteFamilyMutation.isPending}
-                              className="px-2 py-1 rounded-lg text-xs font-medium"
-                              style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', color: 'var(--color-danger-700)' }}
+                              onClick={() => setDeleteFamilyConfirm(family.id)}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                              style={{ background: 'var(--color-danger-50)', border: 'none', cursor: 'pointer', color: 'var(--color-danger-500)' }}
+                              title="Familie löschen"
                             >
-                              Löschen
+                              <X size={14} />
                             </button>
-                            <button
-                              onClick={() => setDeleteFamilyConfirm(null)}
-                              className="px-2 py-1 rounded-lg text-xs font-medium"
-                              style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', color: 'var(--color-stone-700)' }}
-                            >
-                              Abbruch
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => setDeleteFamilyConfirm(family.id)}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-                            style={{ background: 'var(--color-danger-50)', border: 'none', cursor: 'pointer', color: 'var(--color-danger-500)' }}
-                            title="Familie löschen"
-                          >
-                            <X size={14} />
-                          </button>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -360,7 +362,7 @@ export default function SystemAdminPage() {
         </div>
 
         {/* ── ALLE USER ────────────────────────────────────────── */}
-        <div style={cardStyle}>
+        <div style={cardStyle} className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <h2 className="text-base font-semibold">Alle Benutzer</h2>
             <button
@@ -456,79 +458,69 @@ export default function SystemAdminPage() {
             <p className="text-sm" style={{ color: 'var(--color-stone-500)' }}>Keine Benutzer gefunden.</p>
           )}
           {users.length > 0 && (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--color-stone-border)' }}>
-                    <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Benutzer</th>
-                    <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Rolle</th>
-                    <th className="text-left pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Familie</th>
-                    <th className="text-right pb-3 font-medium" style={{ color: 'var(--color-stone-600)' }}>Aktionen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} style={{ borderBottom: '1px solid var(--color-stone-row)' }}>
-                      <td className="py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0"
-                            style={{ background: 'var(--color-sage-500)' }}>
-                            {user.username[0]?.toUpperCase()}
-                          </div>
-                          <span className="font-medium">{user.username}</span>
-                        </div>
-                      </td>
-                      <td className="py-3">
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium"
+            <div className="flex flex-col gap-2">
+              {users.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex flex-col gap-2 px-3 py-3 rounded-xl sm:flex-row sm:items-center sm:justify-between"
+                  style={{ background: 'var(--color-stone-50)', border: '1px solid var(--color-stone-border)' }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0"
+                      style={{ background: 'var(--color-sage-500)' }}>
+                      {user.username[0]?.toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="font-medium text-sm">{user.username}</span>
+                      <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium"
                           style={ROLE_BADGE[user.role] ?? { background: 'var(--color-stone-100)', color: 'var(--color-stone-700)' }}>
                           {user.role}
                         </span>
-                      </td>
-                      <td className="py-3 text-sm" style={{ color: 'var(--color-stone-600)' }}>
-                        {getFamilyName(user.family_id) ?? <span style={{ color: 'var(--color-stone-400)' }}>—</span>}
-                      </td>
-                      <td className="py-3 text-right">
-                        <div className="flex gap-1 justify-end">
-                          <button
-                            onClick={() => openEditUser(user)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                            style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-900)' }}
-                          >
-                            Bearbeiten
-                          </button>
-                          {deleteUserConfirm === user.id ? (
-                            <>
-                              <button
-                                onClick={() => deleteUserMutation.mutate(user.id)}
-                                disabled={deleteUserMutation.isPending}
-                                className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                                style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
-                              >
-                                Bestätigen
-                              </button>
-                              <button
-                                onClick={() => setDeleteUserConfirm(null)}
-                                className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                                style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
-                              >
-                                Abbruch
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => setDeleteUserConfirm(user.id)}
-                              className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                              style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
-                            >
-                              Löschen
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <span className="text-xs" style={{ color: 'var(--color-stone-600)' }}>
+                          {getFamilyName(user.family_id) ?? <span style={{ color: 'var(--color-stone-400)' }}>—</span>}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 pl-9 sm:pl-0">
+                    <button
+                      onClick={() => openEditUser(user)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                      style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-900)' }}
+                    >
+                      Bearbeiten
+                    </button>
+                    {deleteUserConfirm === user.id ? (
+                      <>
+                        <button
+                          onClick={() => deleteUserMutation.mutate(user.id)}
+                          disabled={deleteUserMutation.isPending}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                          style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
+                        >
+                          Bestätigen
+                        </button>
+                        <button
+                          onClick={() => setDeleteUserConfirm(null)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                          style={{ background: 'var(--color-stone-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-stone-700)' }}
+                        >
+                          Abbruch
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setDeleteUserConfirm(user.id)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                        style={{ background: 'var(--color-danger-100)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-danger-700)' }}
+                      >
+                        Löschen
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
