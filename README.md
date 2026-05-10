@@ -40,9 +40,10 @@ Die Architektur-Dokumentation ist in zwei Bereiche aufgeteilt:
 
 📖 **Anleitung zum Anzeigen:** Siehe [`docs/diagrams/README.md`](docs/diagrams/README.md)
 
-## KI-Nutzung
+## Projektdokumentation
 
-Eine vollständige Übersicht über die eingesetzten KI-Tools und deren Verwendung im Projekt finden Sie in [`KI_LOG.md`](KI_LOG.md).
+- **KI-Nutzung:** Eine vollständige Übersicht über die eingesetzten KI-Tools und deren Verwendung finden Sie in [`docs/KI_LOG.md`](docs/KI_LOG.md)
+- **Task Log:** Eine kleine Übersicht über die Aufgabenverteilung finden Sie in [`docs/TASK_LOG.md`](docs/TASK_LOG.md)
 
 ---
 
