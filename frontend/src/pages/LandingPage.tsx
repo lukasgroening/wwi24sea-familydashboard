@@ -307,17 +307,18 @@ export default function LandingPage() {
       </div>
 
       {/* HUD */}
-      <div style={{
-        position: 'absolute', top: 40, left: 0, right: 0,
+      <div className="landing-hud" style={{
+        position: 'absolute', top: 'clamp(16px, 4vw, 40px)', left: 0, right: 0,
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-        padding: '0 56px', pointerEvents: 'none',
+        padding: '0 clamp(16px, 4vw, 56px)', pointerEvents: 'none',
+        flexWrap: 'wrap', gap: 16,
       }}>
         {/* Left: Branding */}
         <div style={{ pointerEvents: 'all' }}>
           <div style={{ fontSize: 10, letterSpacing: '0.24em', color: pal.inkSoft, textTransform: 'uppercase', marginBottom: 4 }}>
             est. 2026 · dein digitales Zuhause
           </div>
-          <h1 style={{ margin: 0, fontFamily: '"Instrument Serif", serif', fontSize: 'clamp(52px, 8vw, 110px)', lineHeight: 0.95, letterSpacing: '-0.02em', color: pal.ink }}>
+          <h1 style={{ margin: 0, fontFamily: '"Instrument Serif", serif', fontSize: 'clamp(36px, 7vw, 110px)', lineHeight: 0.95, letterSpacing: '-0.02em', color: pal.ink }}>
             Famly<br />
             <em style={{ fontStyle: 'italic', color: 'oklch(55% 0.12 146)' }}>Dashboard</em>
           </h1>
@@ -329,12 +330,12 @@ export default function LandingPage() {
             <button
               onClick={handleDashboard}
               style={{
-                fontFamily: '"Geist Mono", monospace', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase',
+                fontFamily: '"Geist Mono", monospace', fontSize: 'clamp(10px, 2vw, 12px)', letterSpacing: '0.18em', textTransform: 'uppercase',
                 background: pal.ink, color: pal.paper, border: `1.5px solid ${pal.ink}`,
-                padding: '14px 28px', borderRadius: 2, cursor: 'pointer', transition: 'all 200ms',
+                padding: 'clamp(10px, 2vw, 14px) clamp(16px, 3vw, 28px)', borderRadius: 2, cursor: 'pointer', transition: 'all 200ms',
               }}
             >
-              Dashboard öffnen →
+              Dashboard →
             </button>
           ) : (
             <>
@@ -344,9 +345,9 @@ export default function LandingPage() {
                 onMouseLeave={() => setHoverLogin(false)}
                 disabled={phase !== 'idle'}
                 style={{
-                  fontFamily: '"Geist Mono", monospace', fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase',
+                  fontFamily: '"Geist Mono", monospace', fontSize: 'clamp(10px, 2vw, 12px)', letterSpacing: '0.2em', textTransform: 'uppercase',
                   background: hoverLogin ? pal.ink : 'transparent', color: hoverLogin ? pal.paper : pal.ink,
-                  border: `1.5px solid ${pal.ink}`, padding: '14px 28px', borderRadius: 2,
+                  border: `1.5px solid ${pal.ink}`, padding: 'clamp(10px, 2vw, 14px) clamp(16px, 3vw, 28px)', borderRadius: 2,
                   cursor: phase === 'idle' ? 'pointer' : 'default', transition: 'all 200ms',
                   opacity: phase === 'idle' ? 1 : 0.5,
                 }}
@@ -368,14 +369,14 @@ export default function LandingPage() {
       </div>
 
       {/* Footer */}
-      <div style={{
-        position: 'absolute', bottom: 24, left: 0, right: 0,
-        display: 'flex', justifyContent: 'space-between', padding: '0 56px',
+      <div className="landing-footer" style={{
+        position: 'absolute', bottom: 'clamp(12px, 2vw, 24px)', left: 0, right: 0,
+        display: 'flex', justifyContent: 'center', padding: '0 clamp(16px, 4vw, 56px)',
         fontSize: 10, letterSpacing: '0.22em', color: pal.inkSoft, textTransform: 'uppercase',
-        pointerEvents: 'none',
+        pointerEvents: 'none', flexWrap: 'wrap', gap: '4px 24px', textAlign: 'center',
       }}>
         <span>Famly · Familien Dashboard</span>
-        <span style={{ letterSpacing: '0.1em', textTransform: 'none', fontSize: 11 }}>Termine, Aufgaben, Einkaufslisten — alles, was sonst am Kühlschrank kleben würde.</span>
+        <span className="landing-footer-desc" style={{ letterSpacing: '0.1em', textTransform: 'none', fontSize: 11 }}>Termine, Aufgaben, Einkaufslisten — alles an einem Ort.</span>
         <span>{new Date().toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' })}</span>
       </div>
 

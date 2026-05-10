@@ -121,9 +121,9 @@ export default function LoginPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', background: '#f5efe3', fontFamily: '"Geist Mono", monospace' }}>
       {/* Left panel */}
-      <div style={{
-        flex: '0 0 440px', display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        padding: '60px 52px', borderRight: '1px solid rgba(42,36,29,0.12)',
+      <div className="login-left-panel" style={{
+        flex: '1 1 440px', maxWidth: 520, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        padding: 'clamp(32px, 5vw, 60px) clamp(20px, 4vw, 52px)', borderRight: '1px solid rgba(42,36,29,0.12)',
       }}>
         {/* Header */}
         <div style={{ marginBottom: 36 }}>
@@ -193,8 +193,8 @@ export default function LoginPage() {
 
       </div>
 
-      {/* Right panel */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', gap: 32 }}>
+      {/* Right panel - hidden on mobile */}
+      <div className="login-right-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', gap: 32 }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(42,36,29,0.05) 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
         <div style={{ position: 'relative', textAlign: 'center' }}>
           <div style={{ fontFamily: '"Instrument Serif", serif', fontSize: 'clamp(60px, 10vw, 130px)', color: 'rgba(42,36,29,0.05)', lineHeight: 1, userSelect: 'none', marginBottom: 8 }}>
